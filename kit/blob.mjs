@@ -572,7 +572,7 @@ function nearestOn(lines, p) {
   return best;
 }
 
-export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null } = {}) {
+export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null, banded = [] } = {}) {
   if (!F.bounds) throw new Error("blob.paint: the field has no bounds");
   const started = Date.now();
   const cam = basisOf(P);
@@ -744,7 +744,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     const own = m === ground ? outlineRings : region((r) => r.hit && r.mat === m);
     if (!own.length) return null;
     const cover = m === ground ? coverage : ringsPath(own);
-    const bands = tones === "overlay" ? ["", "", "", ""] : BANDS.map((level) => ringsPath(region((r) => r.hit && r.mat === m && r.score >= level)));
+    const bands = tones === "overlay" && !banded.includes(mat) ? ["", "", "", ""] : BANDS.map((level) => ringsPath(region((r) => r.hit && r.mat === m && r.score >= level)));
     const seams = [];
     for (const ring of m === ground ? [] : own) {
       const n = ring.points.length;
@@ -787,6 +787,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
         const gap = Math.abs(hit.a.t - hit.b.t);
         const turn = angle(hit.a, hit.b);
         if (gap <= jump && turn <= crease) continue;
+        if (gap <= jump && banded.some((mat) => F.materials.indexOf(mat) === hit.a.mat || F.materials.indexOf(mat) === hit.b.mat)) continue;
         flagged.set(((j * nx + i) * 2) | dir, { at: hit.at, kind: gap > jump ? "contour" : "crease" });
       }
   const links = new Map();
@@ -843,7 +844,8 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     }
   }
   const seams = withSeams ? layers.filter(Boolean).flatMap((layer) => layer.seams).filter((s) => lengthOf(s.points) > 1) : [];
-  const overlay = tones === "overlay" ? BANDS.map((level) => ringsPath(region((r) => r.hit && r.score >= level).filter((ring) => Math.abs(areaOf(ring.points)) >= 2), toneSmooth ?? smooth)) : null;
+  const own = new Set(banded.map((mat) => F.materials.indexOf(mat)));
+  const overlay = tones === "overlay" ? BANDS.map((level) => ringsPath(region((r) => r.hit && r.score >= level && !own.has(r.mat)).filter((ring) => Math.abs(areaOf(ring.points)) >= 2), toneSmooth ?? smooth)) : null;
   const kept = layers.filter(Boolean);
   if (ground >= 0) kept.sort((a, b) => (b.mat === base) - (a.mat === base));
   return { layers: kept, ground: ground >= 0, tones: overlay, outline, coverage, inner, seams, box, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };

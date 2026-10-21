@@ -127,3 +127,27 @@ function postTop() {
 export const POST_TOP = postTop() + 5;
 
 
+const CUT_N = G.unit3([0.45, 0.6, 0.62]);
+export const CUT = { o: W(G.mul3(CUT_N, 3.4)), n: Wd(CUT_N) };
+const valve = { mat: "valve" };
+const cavity = (c, r, axes) => B.ellipsoid(W(c), r, { axes });
+const LV_AXES = along(BASE_C, APEX, [1, 0, 0]);
+const RV_AXES = along([-14, 16, 14], [18, 26, -36], [1, -0.4, 0]);
+const CAVITIES = B.blend(3,
+  cavity([17, 0, -6], [29, 14, 10], LV_AXES),
+  cavity([-6, 21, -2], [26, 16, 5.5], RV_AXES),
+  cavity([-34, 0, 24], [13, 12, 18], AXES),
+  cavity([6, -26, 30], [20, 10, 10], AXES),
+  B.capsule(W([6, -24, 27]), W([12, -6, 12]), 6.5, 6.5),
+  B.capsule(W([-30, 4, 19]), W([-14, 16, 6]), 6, 6),
+);
+const LEAFLETS = [
+  [[7, -12, 17], [15, -1, 1], [24, 4, -22]],
+  [[14, -9, 19], [21, 1, 3], [27, 3, -20]],
+  [[-24, 8, 13], [-14, 19, 0], [-6, 24, -14]],
+  [[-19, 13, 15], [-9, 22, 2], [-2, 25, -12]],
+].map(([root, tip, papilla]) => B.blend(0.8, B.capsule(W(root), W(tip), 2.4, 0.9, valve), B.capsule(W(tip), W(G.lerp3(tip, papilla, 0.7)), 0.35, 0.35, valve), B.capsule(W(G.lerp3(tip, papilla, 0.7)), W(papilla), 1.2, 3.2, muscle)));
+const SHELL = B.blend(0.7, B.blend(3, B.blend(2.5, B.carve(BODY, CAVITIES, 1.5), ...AURICLES), ...VESSELS), ...CORONARIES);
+export const CUT_TOP = LIFT + 48;
+const REMOVE = B.intersect(0, B.halfspace(CUT.o, G.mul3(CUT.n, -1)), B.halfspace([0, 0, CUT_TOP], [0, 0, 1]));
+export const HEART_CUT = B.field(B.carve(B.union(SHELL, ...LEAFLETS), REMOVE, 0.25, { mat: "cut" }), { name: "heart.cut", mix: MIX });

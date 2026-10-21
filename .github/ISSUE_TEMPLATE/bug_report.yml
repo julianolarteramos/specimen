@@ -78,8 +78,8 @@ body:
       label: How to reproduce
       description: The prompt you gave the agent, or the exact command you ran.
       placeholder: |
-        /anatomy explain how a token bucket rate limiter works, interactive
-        node examples/raptor-engine/build.mjs --audit
+        /specimen a classroom heart model that beats at 72 bpm, with a four-chamber cut
+        node examples/heart/build.mjs --audit
     validations:
       required: true
   - type: textarea

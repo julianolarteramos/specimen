@@ -8,7 +8,7 @@ import test from "node:test";
 
 const execute = promisify(execFile);
 async function run(kind, args) {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-enter-key-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-enter-key-"));
   try {
     const file = join(directory, "figure.html");
     await writeFile(file, `<!doctype html><div class="iso-plate" style="width:400px;height:180px"><button id="button" type="button" tabindex="0" onclick="window.clicked=(window.clicked||0)+1;document.querySelector('[data-readout]').textContent='activated'">Activate</button><form onsubmit="event.preventDefault();window.submitted=(window.submitted||0)+1"><input id="field" tabindex="0"></form><input id="range" type="range" value="5" min="0" max="10"><span data-readout>waiting</span></div>`);

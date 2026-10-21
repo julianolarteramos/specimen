@@ -8,7 +8,7 @@ import test from "node:test";
 
 const execute = promisify(execFile);
 async function run(actions, script = "") {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-driver-regression-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-driver-regression-"));
   try {
     const page = join(directory, "figure.html");
     const file = join(directory, "actions.json");

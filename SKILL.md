@@ -1,6 +1,6 @@
 ---
 name: specimen
-description: Build crafted, interactive isometric SVG figures of anatomy as a real teaching object (a classroom heart model on a turned plinth, a kidney cut open beside its adrenal gland, a brain hemisphere with its sulci, a liver with its vessels), with organs and vessels drawn from smooth distance fields, four-tone shading, tissue colours, cuts, translucent membranes, correct painter's order, a framed card with title, hint and live readout, and calm motion from a true model. Use it whenever someone wants an anatomical illustration, an organ or system diagram for a class, a slide, docs or an article, an explanatory figure of physiology (a heartbeat, blood flow, a hormone path), or an interactive explainer of the body, even if they never say "isometric". It keeps the anatomy kit's machine parts (stands, instruments, pipes) for the objects around the specimen. Framework-free (Node scripts that write SVG and HTML) or React/Next.js; WebGL optional.
+description: Build crafted, interactive isometric SVG figures of anatomy as a real teaching object (a classroom heart model on a turned plinth, a kidney cut open beside its adrenal gland, a brain hemisphere with its sulci, a liver with its vessels), with organs and vessels drawn from smooth distance fields, four-tone shading, tissue colours, cuts, translucent membranes, correct painter's order, a framed card with title, hint and live readout, and calm motion from a true model. Use it whenever someone wants an anatomical illustration, an organ or system diagram for a class, a slide, docs or an article, an explanatory figure of physiology (a heartbeat, blood flow, a hormone path), or an interactive explainer of the body, even if they never say "isometric". It keeps the Anatomy kit's machine parts (stands, instruments, pipes) for the objects around the specimen. Framework-free (Node scripts that write SVG and HTML) or React/Next.js; WebGL optional.
 license: MIT
 compatibility: Written for Claude Code; also runs in Antigravity, OpenCode, Codex and MiniMax Code. Needs Node.js 20.10+, and Chrome or Chromium for the checks.
 metadata:
@@ -15,7 +15,7 @@ Open the closest example before you start. Each is built with `node examples/<na
 
 - `examples/heart/` is the reference: one distance field with chambers, draped auricles, the great vessels with cut ends and lumens, and coronary arteries fused on the surface, in four tissues with graded joins. Four views at different azimuths, a four-chamber section and a view through the pericardium crossfade on one card; a pure model drives a calm heartbeat and the bpm readout. Every view is audited in organic mode.
 - `examples/kidney/`, `examples/brain/` and `examples/liver/` are the organ set: a kidney opened on its coronal plane beside its adrenal gland (cortex, medulla, pyramids, pelvis, hilum vessels), a brain hemisphere with gyri and sulci carved into its surface, and a liver with its lobes, gallbladder and the vessels at its hilum.
-- The anatomy examples (`dial-indicator`, `desk-computer`, `arcade-cabinet`, `raptor-engine`, `ripple-tank`, `test-rig`, `spot-plate`) stay as the reference for the machine parts a specimen stands on and the instruments around it.
+- The machine examples kept from Anatomy (`dial-indicator`, `desk-computer`, `arcade-cabinet`, `raptor-engine`, `ripple-tank`, `test-rig`, `spot-plate`) stay as the reference for the machine parts a specimen stands on and the instruments around it.
 
 ## The one idea that matters
 
@@ -148,4 +148,3 @@ Read these as you need them:
 - `references/webgl.md`: shaders inside the drawing: when one earns its place, the layer stack, the camera contract, ray-marching in the iso camera, the full API with a minimal page, the craft rules with the bugs that taught them, the light theme (inks on paper, per-phenomenon recipes, the reviewers' faults), and how to verify them.
 - `references/walkthrough.md`: how the test rig was designed, step by step, from concept to code.
 - `references/print.md`: printable A4 or Letter sheets from a built figure: the three formats, the `sheet.mjs` spec (poses, parts as selectors, focus, hide, crops, rasters for WebGL) and how to check the PDF.
-- `references/publish.md`: sharing a finished figure in the community gallery with `scripts/publish.mjs`, only when the user asks; nothing is pushed for them.

@@ -1,11 +1,12 @@
 # Changelog
 
-All notable changes to Anatomy are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries from before the first release are dated.
+All notable changes to specimen are recorded here. Specimen is a fork of [Anatomy](https://github.com/wheresryan22/anatomy) by Ryan; the entries for 1.1.0 and earlier are Anatomy's own, kept for its history. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries from before the first release are dated.
 
 ## [Unreleased]
 
 ### Removed
 
+- Specimen fork: publishing to the Anatomy community gallery. `scripts/publish.mjs`, `references/publish.md`, `scripts/session.mjs` (the session log reader it used for time and tokens), `scripts/fingerprint.mjs` and their tests. Specimen has no gallery; share a figure by sharing its build script and page.
 - Specimen fork: the 3D `turn` mode (beta, convex parts only). `kit/turn.mjs`, `turn-build.mjs`, `turn-audit.mjs`, `turn-fixed.mjs`, `canvas-painter.mjs` and `gl-shared.mjs`, `GLSL_TURN` and `glslPose` in `kit/gl.mjs`, `turnScript` and `fixedScript` in `scripts/inline-kit.mjs`, the `turn` and `orbit` actions of `drive.mjs`, `scripts/turn-check.mjs`, `turn-fidelity.mjs` and `turn-bench.mjs` with their tests, `examples/turning-dial/` and `references/3d.md`. Rotation in specimen is a set of pre-generated azimuth views with a crossfade, each view audited.
 
 ### Added

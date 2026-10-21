@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const { build } = require("esbuild");
 const nodePaths = (process.env.NODE_PATH ?? "").split(":").filter(Boolean);
 const alias = Object.fromEntries(["react", "react-dom"].map(name => [name, dirname(require.resolve(name + "/package.json", { paths: nodePaths }))]));
-const directory = await mkdtemp(join(tmpdir(), "anatomy-readout-target-"));
+const directory = await mkdtemp(join(tmpdir(), "specimen-readout-target-"));
 let observed;
 try {
   const entry = `import React,{useLayoutEffect} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';import {useReadout} from ${JSON.stringify(resolve("kit/react/live.tsx"))};
@@ -24,9 +24,9 @@ window.repeat=async()=>{const node=document.querySelector('#healthy [data-readou
   const page = join(directory, "fixture.html");
   await writeFile(page, '<!doctype html><style>body{font:18px system-ui;background:#f5f5f5;color:#222;padding:24px}body[data-theme="dark"]{background:#161616;color:#eee}.iso-plate{padding:16px;border:1px solid #888;margin:10px;display:inline-block;min-width:170px}h2{font-size:16px}[data-readout]{font:24px monospace}</style><h1>React readout after target replacement</h1><p>Expected: reading 2 in every card except same, which must show reading 1.</p><div id="readout"></div><div id="same"></div><div id="anchor"></div><div id="late"></div><div id="healthy"></div><script src="fixture.js"></script>');
   const actions = [["eval", "window.advance()"], ["eval", "window.repeat()"]];
-  if (process.env.ANATOMY_PROOF_DIR) {
-    await mkdir(process.env.ANATOMY_PROOF_DIR, {recursive:true});
-    actions.push(["shot", join(process.env.ANATOMY_PROOF_DIR, "light.png"), "body"], ["eval", "document.body.dataset.theme='dark'"], ["shot", join(process.env.ANATOMY_PROOF_DIR, "dark.png"), "body"]);
+  if (process.env.SPECIMEN_PROOF_DIR) {
+    await mkdir(process.env.SPECIMEN_PROOF_DIR, {recursive:true});
+    actions.push(["shot", join(process.env.SPECIMEN_PROOF_DIR, "light.png"), "body"], ["eval", "document.body.dataset.theme='dark'"], ["shot", join(process.env.SPECIMEN_PROOF_DIR, "dark.png"), "body"]);
   }
   const result = await promisify(execFile)(process.execPath, ["scripts/drive.mjs", page, JSON.stringify(actions)], {timeout:30000});
   const payloads = [...result.stdout.matchAll(/eval: (.*)/g)].map(match=>JSON.parse(match[1]));

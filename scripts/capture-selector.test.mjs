@@ -9,7 +9,7 @@ import test from "node:test";
 const execute = promisify(execFile);
 
 async function capture(selector, svgOnly = false, keys = false) {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-capture-target-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-capture-target-"));
   try {
     const page = join(directory, "figure.html");
     const out = join(directory, "capture.png");
@@ -93,7 +93,7 @@ test("keyboard interaction reaches the explicitly selected figure", async () => 
 });
 
 async function driveTarget(actions, standaloneLines = false) {
-  const directory=await mkdtemp(join(tmpdir(),"anatomy-drive-target-"));
+  const directory=await mkdtemp(join(tmpdir(), "specimen-drive-target-"));
   try{
     const page=join(directory,"figure.html"),out=join(directory,"selected.png"),file=join(directory,"actions.json");
     const svg='<svg width="60" height="40" viewBox="0 0 60 40"><rect x="10" y="10" width="30" height="20" fill="none" stroke="black"/><path class="iso-line" d="M10 20L40 20" fill="none" stroke="black"/></svg>';

@@ -10,7 +10,7 @@ const require = createRequire(import.meta.url);
 const { build } = require("esbuild");
 const nodePaths = (process.env.NODE_PATH ?? "").split(":").filter(Boolean);
 const alias = Object.fromEntries(["react", "react-dom"].map(name => [name, dirname(require.resolve(name+"/package.json", { paths: nodePaths }))]));
-const directory = mkdtempSync(join(tmpdir(), "anatomy-react-readout-"));
+const directory = mkdtempSync(join(tmpdir(), "specimen-react-readout-"));
 let observed;
 try {
   const entry = `import React,{useEffect,useLayoutEffect} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';import {useReadout} from ${JSON.stringify(resolve("kit/react/live.tsx"))};

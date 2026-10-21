@@ -19,7 +19,7 @@ const fixtures = [
   ["ordinary transformed line", '<line x1="2" y1="3" x2="10" y2="7" transform="rotate(30)"/>'],
 ];
 let native;
-const directory = await mkdtemp(join(tmpdir(), "anatomy-affine-bounds-"));
+const directory = await mkdtemp(join(tmpdir(), "specimen-affine-bounds-"));
 try {
   const page = join(directory, "figure.html");
   await writeFile(page, `<!doctype html><div class="iso-plate"><svg width="400" height="400">${fixtures.map(([,markup],i)=>`<g id="fixture-${i}">${markup}</g>`).join("")}</svg></div>`);

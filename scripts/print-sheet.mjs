@@ -232,7 +232,7 @@ function posterPage(ctx, paper) {
 <aside class="pp-side">${spec.question ? `<p class="pp-q">${esc(spec.question)}</p>` : ""}${spec.lead ? `<p class="pp-lead">${esc(spec.lead)}</p>` : ""}<div>${numbersHtml(spec)}</div></aside>
 <div class="pp-art"><div class="ps-fit" style="--ps-aspect:${round((crop[2] / crop[3]) * 1000) / 1000}">${figure(ctx, main, { crop, widthMm: Math.min(figW, 190 * (crop[2] / crop[3])), pins: pinsOf(ctx, view) })}</div></div>
 <ol class="pp-legend">${legendHtml(ctx)}</ol>
-<footer class="ps-ft ps-mono"><span>Anatomy</span><span>${esc(spec.quote ?? "")}</span><span>${paper.name}</span></footer>
+<footer class="ps-ft ps-mono"><span>Specimen</span><span>${esc(spec.quote ?? "")}</span><span>${paper.name}</span></footer>
 </main>`;
   return { css, html };
 }
@@ -293,7 +293,7 @@ function drawingPage(ctx, paper) {
 <div class="pd-main"><div class="ps-fit" style="--ps-aspect:${round((crop[2] / crop[3]) * 1000) / 1000}">${figure(ctx, main, { crop, widthMm: Math.min(mainW, 170 * (crop[2] / crop[3])), pins: pinsOf(ctx, view) })}</div></div>
 <div class="pd-side">${list ? `<section><div class="ps-mono">Parts</div><ol>${list}</ol></section>` : ""}${rows ? `<section><div class="ps-mono">Specification</div><dl>${rows}</dl></section>` : ""}${inset}</div>
 ${steps.length ? `<div class="pd-seq">${seq}</div>` : ""}
-<div class="ps-ft ps-mono"><span>Anatomy</span><span>Not to scale</span><span>${paper.name} · 1 / 1</span></div>
+<div class="ps-ft ps-mono"><span>Specimen</span><span>Not to scale</span><span>${paper.name} · 1 / 1</span></div>
 </main>`;
   return { css, html };
 }
@@ -380,7 +380,7 @@ ${wideMain ? ".pe-left>.pe-art{flex:0 0 auto}.pe-left>.pe-art>.ps-fit{height:aut
 <header class="pe-mast"><h1>${esc(spec.name)}</h1><div class="ps-mono">${tags}<br>How it works · 1 / 2</div></header>
 <div class="pe-left"><div class="pe-art"><div class="ps-fit" style="--ps-aspect:${round((crop[2] / crop[3]) * 1000) / 1000}">${figure(ctx, main, { crop, widthMm: Math.min(108, 165 * (crop[2] / crop[3])), pins: pinsOf(ctx, view), marks })}</div></div>${details.length ? `<section class="pe-sub"><div class="ps-mono">Close-ups</div><div class="pe-details">${detailHtml}</div></section>` : ""}</div>
 <aside class="pe-side">${spec.question ? `<p class="pe-q">${esc(spec.question)}</p>` : ""}${spec.lead ? `<p class="pe-lead">${esc(spec.lead)}</p>` : ""}<div class="pe-nums">${numbersHtml(spec, "pe-num")}</div><div class="ps-mono">Parts</div><ol class="pe-legend">${legendHtml(ctx)}</ol></aside>
-<footer class="ps-ft ps-mono"><span>Anatomy</span><span>${esc(spec.quote ?? "")}</span><span>${paper.name} · 1 / 2</span></footer>
+<footer class="ps-ft ps-mono"><span>Specimen</span><span>${esc(spec.quote ?? "")}</span><span>${paper.name} · 1 / 2</span></footer>
 </main>`;
   const plan = detailedPlan(spec);
   const total = plan.total;
@@ -397,7 +397,7 @@ ${wideMain ? ".pe-left>.pe-art{flex:0 0 auto}.pe-left>.pe-art>.ps-fit{height:aut
 <div class="pe-top"><h2>How it works${plan.stepPages > 1 ? ` <span class="pe-cont">${n + 1} / ${plan.stepPages}</span>` : ""}</h2><div class="ps-mono">${esc(spec.name)} · ${paper.name} · ${pageNo} / ${total}</div></div>
 <div class="pe-steps">${take.join("")}${last ? why : ""}</div>
 ${last && rows && !plan.assemblyPages ? `<section class="pe-end"><div class="ps-mono">Specification</div><dl>${rows}</dl></section>` : ""}
-<footer class="ps-ft ps-mono"><span>Anatomy</span><span>Not to scale</span><span>${paper.name} · ${pageNo} / ${total}</span></footer>
+<footer class="ps-ft ps-mono"><span>Specimen</span><span>Not to scale</span><span>${paper.name} · ${pageNo} / ${total}</span></footer>
 </main>`);
   }
   const assemblies = (spec.assemblies ?? []).slice(0, plan.assemblyPages * ASSEMBLIES_PER_PAGE);
@@ -419,7 +419,7 @@ ${last && rows && !plan.assemblyPages ? `<section class="pe-end"><div class="ps-
 <div class="pe-top"><h2>Assemblies</h2><div class="ps-mono">${esc(spec.name)} · ${paper.name} · ${pageNo} / ${total}</div></div>
 <div class="pe-asms">${cards}</div>
 ${last && rows ? `<section class="pe-end"><div class="ps-mono">Specification</div><dl>${rows}</dl></section>` : ""}
-<footer class="ps-ft ps-mono"><span>Anatomy</span><span>Not to scale</span><span>${paper.name} · ${pageNo} / ${total}</span></footer>
+<footer class="ps-ft ps-mono"><span>Specimen</span><span>Not to scale</span><span>${paper.name} · ${pageNo} / ${total}</span></footer>
 </main>`);
   }
   const extra = `

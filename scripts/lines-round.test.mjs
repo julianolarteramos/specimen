@@ -11,7 +11,7 @@ const execute = promisify(execFile);
 const lines = fileURLToPath(new URL("lines.mjs", import.meta.url));
 
 async function check(shape, path) {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-lines-round-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-lines-round-"));
   try {
     const page = join(directory, "figure.html");
     await writeFile(page, `<!doctype html><div class="iso-plate"><svg width="200" height="100" viewBox="0 0 200 100">${shape}<path class="iso-line" fill="none" stroke="black" d="${path}"/></svg></div>`);

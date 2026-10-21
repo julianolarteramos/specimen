@@ -11,17 +11,17 @@ const execute = promisify(execFile);
 
 for (const name of ["capture", "drive"]) {
   test(`${name} removes its profile when Chrome exits before startup`, async () => {
-    const directory = await mkdtemp(join(tmpdir(), "anatomy-chrome-startup-"));
+    const directory = await mkdtemp(join(tmpdir(), "specimen-chrome-startup-"));
     let profile;
     try {
       const binary = join(directory, "chrome");
       const receipt = join(directory, "profile.txt");
-      await writeFile(binary, '#!/bin/sh\nfor arg in "$@"; do\n  case "$arg" in --user-data-dir=*) printf "%s" "${arg#--user-data-dir=}" > "$ANATOMY_PROFILE_RECEIPT";; esac\ndone\nexit 7\n');
+      await writeFile(binary, '#!/bin/sh\nfor arg in "$@"; do\n  case "$arg" in --user-data-dir=*) printf "%s" "${arg#--user-data-dir=}" > "$SPECIMEN_PROFILE_RECEIPT";; esac\ndone\nexit 7\n');
       await chmod(binary, 0o755);
       const started = performance.now();
       let result;
       try {
-        await execute(process.execPath, [fileURLToPath(new URL(`${name}.mjs`, import.meta.url)), join(directory, "figure.html"), ...(name === "drive" ? ["[]"] : [])], { timeout: 30000, env: { ...process.env, CHROME_PATH: binary, ANATOMY_PROFILE_RECEIPT: receipt } });
+        await execute(process.execPath, [fileURLToPath(new URL(`${name}.mjs`, import.meta.url)), join(directory, "figure.html"), ...(name === "drive" ? ["[]"] : [])], { timeout: 30000, env: { ...process.env, CHROME_PATH: binary, SPECIMEN_PROFILE_RECEIPT: receipt } });
       } catch (error) {
         result = error;
       }

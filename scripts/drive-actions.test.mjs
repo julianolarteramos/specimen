@@ -11,7 +11,7 @@ const execute = promisify(execFile);
 const drive = fileURLToPath(new URL("drive.mjs", import.meta.url));
 
 async function run(actions) {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-drive-actions-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-drive-actions-"));
   try {
     const page = join(directory, "figure.html");
     const file = join(directory, "actions.json");
@@ -54,7 +54,7 @@ test("sheet rejects a count that yields no frames", async () => {
 });
 
 test("a valid sheet still passes validation", async () => {
-  const sheet = join(tmpdir(), `anatomy-sheet-${process.pid}.png`);
+  const sheet = join(tmpdir(), `specimen-sheet-${process.pid}.png`);
   try {
     const result = await run([["sheet", sheet, 10, 2]]);
     assert.equal(result.code, 0, result.stderr);

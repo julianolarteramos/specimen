@@ -21,7 +21,7 @@ const fixtures=[
   ["ordinary double quoted rectangle", '<rect x="10" y="20" width="30" height="40"/>'],
   ["ordinary transformed circle", '<g transform="translate(2 3)"><circle cx="10" cy="10" r="5"/></g>'],
 ];
-let native;const directory=await mkdtemp(join(tmpdir(),"anatomy-svg-attributes-"));
+let native;const directory=await mkdtemp(join(tmpdir(), "specimen-svg-attributes-"));
 try{
   const page=join(directory,"figure.html");await writeFile(page,`<!doctype html><div class="iso-plate"><svg width="100" height="100">${fixtures.map(([,m],i)=>`<g id="f${i}">${m}</g>`).join("")}</svg></div>`);
   const expression=`Array.from({length:${fixtures.length}},(_,i)=>{const b=document.querySelector('#f'+i).getBBox();return[b.x,b.y,b.x+b.width,b.y+b.height]})`;

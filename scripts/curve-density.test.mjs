@@ -11,7 +11,7 @@ for (const [name, path, x, y] of [
   ["cubic between fixed samples", "M20 400C20 20 480 20 480 400", 25.166015625, 333.203125],
   ["quadratic between fixed samples", "M20 400Q250 20 480 400", 58.33333333333333, 341.94444444444446],
 ]) test(`native SVG ${name} roots an attached line`, async () => {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-curve-density-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-curve-density-"));
   try {
     const file = join(directory, "figure.html");
     await writeFile(file, `<!doctype html><div class="iso-plate"><svg width="520" height="440" viewBox="0 0 520 440"><path id="curve" fill="none" stroke="black" d="${path}"/><path class="iso-line" data-free="start" fill="none" stroke="black" d="M${x} 10L${x} ${y}"/></svg></div>`);
@@ -31,7 +31,7 @@ for (const [name, path, x, y, transform, attached] of [
   ["collinear overshooting cubic", "M20 120C400 120 400 120 100 120", 315, 120, "", true],
   ["detached cubic endpoint", "M20 400C20 20 480 20 480 400", 45.166015625, 333.203125, "", false],
 ]) test(`native SVG ${name} retains actual attachment`, async () => {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-curve-bound-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-curve-bound-"));
   try {
     const file = join(directory, "figure.html");
     await writeFile(file, `<!doctype html><div class="iso-plate"><svg width="1560" height="440" viewBox="0 0 1560 440"><g transform="${transform}"><path id="curve" fill="none" stroke="black" d="${path}"/><path class="iso-line" data-free="start" fill="none" stroke="black" d="M${x} 10L${x} ${y}"/></g></svg></div>`);
@@ -46,7 +46,7 @@ for (const [name, path, x, y, transform, attached] of [
 });
 
 test("native audit refuses curves whose approximation budget cannot prove the bound", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-curve-budget-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-curve-budget-"));
   try {
     const file = join(directory, "figure.html");
     await writeFile(file, '<!doctype html><div class="iso-plate"><svg width="520" height="440"><path fill="none" stroke="black" d="M20 400C1000000000 0 0 1000000000 480 400"/></svg></div>');

@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const ts = require("typescript");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
-const directory = mkdtempSync(join(tmpdir(), "anatomy-react-solid-"));
+const directory = mkdtempSync(join(tmpdir(), "specimen-react-solid-"));
 try {
   for (const file of ["kit/iso-kit.ts", "kit/react/live.tsx", "kit/react/draw.tsx"]) {
     const output = join(directory, file.replace(/\.tsx?$/, ".js"));

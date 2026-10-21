@@ -1,3 +1,3 @@
 interface:
-  display_name: "Anatomy"
-  short_description: "Explain an idea as a crafted, interactive isometric machine"
+  display_name: "Specimen"
+  short_description: "Draw anatomy as a crafted, interactive isometric teaching model"

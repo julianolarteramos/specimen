@@ -10,7 +10,7 @@ import test from "node:test";
 const execute = promisify(execFile);
 
 async function drive(expression, action = "eval") {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-drive-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-drive-test-"));
   try {
     const page = join(directory, "figure.html");
     const actions = join(directory, "actions.json");
@@ -66,7 +66,7 @@ test("drive reports an assertion thrown while waiting for a condition", async ()
 });
 
 test("drive accepts a condition that is already true however short the wait", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-drive-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-drive-test-"));
   try {
     const page = join(directory, "figure.html");
     const actions = join(directory, "actions.json");

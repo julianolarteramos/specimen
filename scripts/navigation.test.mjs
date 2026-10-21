@@ -11,7 +11,7 @@ import test from "node:test";
 const execute = promisify(execFile);
 
 async function run(name, kind) {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-navigation-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-navigation-"));
   try {
     let target = join(directory, "figure.html");
     if (kind === "valid") await writeFile(target, '<!doctype html><div class="iso-plate" style="width:100px;height:100px">Figure</div>');

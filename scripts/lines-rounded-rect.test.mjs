@@ -17,7 +17,7 @@ for (const [name, attributes, x, y, rooted, transform = ""] of [
   ["ordinary square retains its original attachment", 'width="100" height="80"', 0, 0, true],
   ["explicit zero radius remains square", 'width="100" height="80" rx="0" ry="30"', 0, 0, true],
 ]) test(name, async () => {
-  const directory = await mkdtemp(join(tmpdir(), "anatomy-rounded-rect-lines-"));
+  const directory = await mkdtemp(join(tmpdir(), "specimen-rounded-rect-lines-"));
   try {
     const file = join(directory, "figure.html");
     await writeFile(file, `<!doctype html><div class="iso-plate"><svg width="360" height="300" viewBox="0 0 360 300"><g transform="${transform}"><rect id="outline" x="0" y="0" ${attributes} fill="none" stroke="black"/><path class="iso-line" data-free="start" fill="none" stroke="black" d="M${x} -20 L${x} ${y}"/></g></svg></div>`);

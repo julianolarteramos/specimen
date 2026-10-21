@@ -416,7 +416,16 @@ function insidePolygon(points, [x, y]) {
   return inside;
 }
 
-function simplify(points, tolerance) {
+// Distance from a point to the chord from (ax, ay) along (dx, dy): to the segment, not the infinite line, so that a
+// line hooking back past an end of the chord keeps its hook. Open lines use it; rings keep the line distance.
+function offChord([px, py], ax, ay, dx, dy, length) {
+  const t = ((px - ax) * dx + (py - ay) * dy) / (length * length);
+  if (t <= 0) return Math.hypot(px - ax, py - ay);
+  if (t >= 1) return Math.hypot(px - ax - dx, py - ay - dy);
+  return Math.abs((px - ax) * dy - (py - ay) * dx) / length;
+}
+
+function simplify(points, tolerance, segment = false) {
   if (points.length < 3) return points;
   const keep = new Uint8Array(points.length);
   keep[0] = keep[points.length - 1] = 1;
@@ -431,7 +440,7 @@ function simplify(points, tolerance) {
     let worst = -1;
     let index = -1;
     for (let i = a + 1; i < b; i++) {
-      const off = Math.abs((points[i][0] - ax) * dy - (points[i][1] - ay) * dx) / length;
+      const off = segment ? offChord(points[i], ax, ay, dx, dy, length) : Math.abs((points[i][0] - ax) * dy - (points[i][1] - ay) * dx) / length;
       if (off > worst) (worst = off), (index = i);
     }
     if (worst > tolerance) {
@@ -589,7 +598,7 @@ function nearestOn(lines, p) {
   return best;
 }
 
-export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null, banded = [], quiet = banded } = {}) {
+export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, lineSmooth = 0.12, base = null, banded = [], quiet = banded } = {}) {
   if (!F.bounds) throw new Error("blob.paint: the field has no bounds");
   const started = Date.now();
   const cam = basisOf(P);
@@ -854,27 +863,36 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
       if (total < 1.2) continue;
       const ramp = Math.min(fade, total * 0.4);
       const tone = kinds.filter((kind) => kind === "contour").length >= kinds.length / 2 ? "hi" : "lo";
-      inner.push({ points: simplify(pts, 0.04), fade: [ends[0] ? 0 : ramp, ends[1] ? 0 : ramp], tone });
+      inner.push({ points: simplify(pts, lineSmooth, true), fade: [ends[0] ? 0 : ramp, ends[1] ? 0 : ramp], tone });
     } else {
       const tone = kinds.filter((kind) => kind === "contour").length >= kinds.length / 2 ? "hi" : "lo";
-      inner.push({ points: [...simplifyRing(pts, 0.04), pts[0]], fade: [0, 0], tone, closed: true });
+      inner.push({ points: [...simplifyRing(pts, lineSmooth), pts[0]], fade: [0, 0], tone, closed: true });
     }
   }
   const seams = withSeams ? layers.filter(Boolean).flatMap((layer) => layer.seams).filter((s) => lengthOf(s.points) > 1) : [];
   const own = new Set(banded.map((mat) => F.materials.indexOf(mat)));
-  const overlay = tones === "overlay" ? BANDS.map((level) => ringsPath(region((r) => r.hit && r.score >= level && !own.has(r.mat)).filter((ring) => Math.abs(areaOf(ring.points)) >= 2), toneSmooth ?? smooth)) : null;
+  // Each tone ring is fitted to a tolerance that follows its width (twice its area over its perimeter): broad regions
+  // take toneSmooth, thin slivers of light keep the finer smooth so they do not lose their shape.
+  const toneTolerance = toneSmooth ?? smooth;
+  const toneRing = (ring) => {
+    const width = (2 * Math.abs(areaOf(ring.points))) / (lengthOf([...ring.points, ring.points[0]]) || 1);
+    return fitRing(ring.points, Math.min(toneTolerance, Math.max(smooth, width * 0.35)));
+  };
+  const overlay = tones === "overlay" ? BANDS.map((level) => region((r) => r.hit && r.score >= level && !own.has(r.mat)).filter((ring) => Math.abs(areaOf(ring.points)) >= 2).map(toneRing).join("")) : null;
   const kept = layers.filter(Boolean);
   if (ground >= 0) kept.sort((a, b) => (b.mat === base) - (a.mat === base));
-  return { layers: kept, ground: ground >= 0, tones: overlay, outline, coverage, inner, seams, box, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };
+  return { layers: kept, ground: ground >= 0, tones: overlay, outline, coverage, inner, seams, box, lineSmooth, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };
 }
 
 const attr = (name, value) => (value === undefined || value === null || value === false ? "" : value === true || value === "" ? ` ${name}` : ` ${name}="${value}"`);
 
-export function fadedLine(points, [start, end], tone = "lo", { steps = 3 } = {}) {
+// The pieces of a line whose ends ramp out: [{ attrs, d }], a few short steps of rising and falling opacity around a
+// solid middle. Each piece is simplified to `smooth` px before it is fitted.
+export function fadedPieces(points, [start, end], tone = "lo", { steps = 3, smooth = 0.04 } = {}) {
   const lengths = [0];
   for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
   const total = lengths[lengths.length - 1];
-  if (total < 1e-6) return "";
+  if (total < 1e-6) return [];
   if (start + end > total) {
     const share = total / (start + end);
     start *= share;
@@ -887,7 +905,7 @@ export function fadedLine(points, [start, end], tone = "lo", { steps = 3 } = {})
     const t = Math.max(0, Math.min(1, (length - lengths[i - 1]) / span));
     return [points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t, points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t];
   };
-  const piece = (from, to) => [at(from), ...points.filter((_, i) => lengths[i] > from + 1e-6 && lengths[i] < to - 1e-6), at(to)];
+  const piece = (from, to) => simplify([at(from), ...points.filter((_, i) => lengths[i] > from + 1e-6 && lengths[i] < to - 1e-6), at(to)], smooth, true);
   const out = [];
   const ramp = (from, to, rising) => {
     for (let k = 0; k < steps; k++) {
@@ -896,13 +914,26 @@ export function fadedLine(points, [start, end], tone = "lo", { steps = 3 } = {})
       const x = (k + 0.5) / steps;
       const alpha = rising ? x * x * (3 - 2 * x) : 1 - x * x * (3 - 2 * x);
       const free = rising ? (k === 0 ? ' data-free="start"' : "") : k === steps - 1 ? ' data-free="end"' : "";
-      out.push(`<path class="iso-line sp-fade" data-tone="${tone}" data-fade="${Math.max(1, Math.min(9, Math.round(alpha * 10)))}"${free} d="${curvePath(piece(a, b), false)}"/>`);
+      out.push({ attrs: `class="iso-line sp-fade" data-tone="${tone}" data-fade="${Math.max(1, Math.min(9, Math.round(alpha * 10)))}"${free}`, d: curvePath(piece(a, b), false) });
     }
   };
   if (start > 0) ramp(0, start, true);
-  if (total - end > start) out.push(`<path class="iso-line" data-tone="${tone}" d="${curvePath(simplify(piece(start, total - end), 0.04), false)}"/>`);
+  if (total - end > start) out.push({ attrs: `class="iso-line" data-tone="${tone}"`, d: curvePath(piece(start, total - end), false) });
   if (end > 0) ramp(total - end, total, false);
-  return out.join("");
+  return out;
+}
+
+export function fadedLine(points, fade, tone = "lo", options = {}) {
+  return fadedPieces(points, fade, tone, options)
+    .map(({ attrs, d }) => `<path ${attrs} d="${d}"/>`)
+    .join("");
+}
+
+// Lines that share their look are drawn as one path: one element per tone, fade step and free end.
+function groupedLines(pieces) {
+  const groups = new Map();
+  for (const { attrs, d } of pieces) if (d) groups.set(attrs, (groups.get(attrs) ?? "") + d);
+  return [...groups].map(([attrs, d]) => `<path ${attrs} d="${d}"/>`).join("");
 }
 
 export function veilSvg(painted, { tissue = "veil", tone = "mid", className } = {}) {
@@ -926,10 +957,9 @@ export function fieldSvg(painted, { tone = "hi", tissue = {}, className, seamTon
       return `<g class="iso-solid"${attr("data-seamless", true)}${look}>${shades}${paths.top ? `<path class="iso-top" d="${paths.top}"/>` : ""}</g>`;
     })
     .join("");
-  const lines = painted.inner
-    .map((line) => (line.fade[0] || line.fade[1] ? fadedLine(line.points, line.fade, line.tone) : `<path class="iso-line" data-tone="${line.tone}" d="${curvePath(line.points, false)}"/>`))
-    .join("");
-  const seams = painted.seams.map((seam) => `<path class="iso-line" data-tone="${seamTone}" d="${curvePath(simplify(seam.points, 0.05), false)}"/>`).join("");
+  const smooth = painted.lineSmooth ?? 0.04;
+  const lines = groupedLines(painted.inner.flatMap((line) => (line.fade[0] || line.fade[1] ? fadedPieces(line.points, line.fade, line.tone, { smooth }) : [{ attrs: `class="iso-line" data-tone="${line.tone}"`, d: curvePath(line.points, false) }])));
+  const seams = groupedLines(painted.seams.map((seam) => ({ attrs: `class="iso-line" data-tone="${seamTone}"`, d: curvePath(simplify(seam.points, 0.05), false) })));
   const veils = painted.tones ? `<g class="sp-tones">${painted.tones.map((d, i) => (d ? `<path class="sp-tone" data-tone="${i + 1}" d="${d}"/>` : "")).join("")}</g>` : "";
   const first = painted.layers[0];
   const under = !painted.ground && painted.layers.length > 1 && first ? `<g class="iso-solid"${attr("data-tissue", tissue[first.mat] ?? first.mat)}><path class="iso-shade" data-shade="1" d="${painted.coverage}"/></g>` : "";

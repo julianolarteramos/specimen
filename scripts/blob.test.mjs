@@ -78,3 +78,20 @@ test("materials split the surface into tissue layers with a seam", () => {
   assert.ok(painted.seams.length >= 1);
   assert.match(B.fieldSvg(painted, { tissue: { artery: "vessel" } }), /data-tissue="vessel"/);
 });
+
+test("fieldSvg draws lines that share a look as one path, and a faded line keeps its hook", () => {
+  const hook = [[0, 0], [10, 0], [20, 0], [24, 1], [25, 3], [24, 5], [20, 6]];
+  const pieces = B.fadedPieces(hook, [3, 3], "lo", { smooth: 0.2 });
+  const middle = pieces.find((piece) => piece.attrs === 'class="iso-line" data-tone="lo"');
+  assert.ok(middle && /c/.test(middle.d), "the hook is still a curve");
+  const painted = { layers: [], ground: true, tones: null, outline: "M0 0l1 1", coverage: "", seams: [], lineSmooth: 0.2, inner: [
+    { points: [[0, 0], [5, 5], [10, 0]], fade: [2, 2], tone: "lo" },
+    { points: [[0, 20], [5, 25], [10, 20]], fade: [2, 2], tone: "lo" },
+    { points: [[0, 40], [5, 45], [10, 40]], fade: [0, 0], tone: "lo" },
+    { points: [[0, 60], [5, 65], [10, 60]], fade: [0, 0], tone: "lo" },
+  ] };
+  const svg = B.fieldSvg(painted);
+  assert.equal((svg.match(/<path class="iso-line" data-tone="lo"/g) ?? []).length, 1);
+  assert.equal((svg.match(/data-free="start"/g) ?? []).length, 1);
+  assert.equal((svg.match(/<path class="iso-line" data-tone="lo" d="([^"]*)"/)[1].match(/M/g) ?? []).length, 4);
+});

@@ -1055,3 +1055,37 @@ export function split(root, seeds, { seam = true } = {}) {
     return intersect(0, root, ...walls);
   });
 }
+
+export function place(node, { scale = 1, basis = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], move = [0, 0, 0] } = {}) {
+  const [ex, ey, ez] = basis;
+  const rot = (v) => [ex[0] * v[0] + ey[0] * v[1] + ez[0] * v[2], ex[1] * v[0] + ey[1] * v[1] + ez[1] * v[2], ex[2] * v[0] + ey[2] * v[1] + ez[2] * v[2]];
+  const back = (v) => [ex[0] * v[0] + ex[1] * v[1] + ex[2] * v[2], ey[0] * v[0] + ey[1] * v[1] + ey[2] * v[2], ez[0] * v[0] + ez[1] * v[1] + ez[2] * v[2]];
+  const at = (p) => add3(move, mul3(rot(p), scale));
+  const walk = (n) => {
+    if (!n || typeof n !== "object") return n;
+    switch (n.op) {
+      case "ball":
+        return { ...n, c: at(n.c), r: n.r * scale };
+      case "ellipsoid":
+        return { ...n, c: at(n.c), r: n.r.map((v) => v * scale), axes: n.axes.map(rot) };
+      case "cone":
+        return { ...n, a: at(n.a), b: at(n.b), ra: n.ra * scale, rb: n.rb * scale };
+      case "half":
+        return { ...n, o: at(n.o), n: rot(n.n) };
+      case "clip":
+        return { ...n, o: at(n.o), n: rot(n.n), k: n.k * scale, of: n.of.map(walk) };
+      case "grow":
+        return { ...n, by: n.by * scale, of: n.of.map(walk) };
+      case "custom": {
+        const f = n.f;
+        const corners = [];
+        if (n.bounds) for (const x of [n.bounds.min[0], n.bounds.max[0]]) for (const y of [n.bounds.min[1], n.bounds.max[1]]) for (const z of [n.bounds.min[2], n.bounds.max[2]]) corners.push(at([x, y, z]));
+        const bounds = corners.length ? { min: [0, 1, 2].map((i) => Math.min(...corners.map((c) => c[i]))), max: [0, 1, 2].map((i) => Math.max(...corners.map((c) => c[i]))) } : undefined;
+        return { ...n, bounds, f: (p) => scale * f(back(mul3(sub3(p, move), 1 / scale))) };
+      }
+      default:
+        return { ...n, k: n.k === undefined ? n.k : n.k * scale, of: n.of ? n.of.map(walk) : n.of };
+    }
+  };
+  return walk(node);
+}

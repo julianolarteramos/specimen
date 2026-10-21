@@ -78,3 +78,10 @@ test("materials split the surface into tissue layers with a seam", () => {
   assert.ok(painted.seams.length >= 1);
   assert.match(B.fieldSvg(painted, { tissue: { artery: "vessel" } }), /data-tissue="vessel"/);
 });
+
+test("place moves, turns and scales a field without changing its distances' shape", () => {
+  const node = B.place(B.capsule([0, 0, 0], [10, 0, 0], 1, 1), { scale: 0.5, basis: [[0, 1, 0], [-1, 0, 0], [0, 0, 1]], move: [3, 0, 0] });
+  const F = B.field(node);
+  assert.ok(Math.abs(F.value([3, 2.5, 0]) + 0.5) < 1e-9);
+  assert.ok(Math.abs(F.value([3, 2.5, 2]) - 1.5) < 1e-9);
+});

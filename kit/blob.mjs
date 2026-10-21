@@ -24,13 +24,22 @@ export const ellipsoid = (c, r, { axes, ...meta } = {}) => ({ op: "ellipsoid", c
 export const capsule = (a, b, ra, rb = ra, meta = {}) => ({ op: "cone", a, b, ra, rb, ...meta });
 
 export function vessel(points, radius, { k = 0, ...meta } = {}) {
+  if (points.length < 2) throw new Error("blob.vessel: a vessel needs two points");
   const lengths = [0];
   for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + len3(sub3(points[i], points[i - 1])));
   const total = lengths[lengths.length - 1] || 1;
   const radiusAt = (i) => (Array.isArray(radius) ? radius[i] : typeof radius === "function" ? radius(lengths[i] / total) : radius);
   const cones = [];
   for (let i = 0; i < points.length - 1; i++) cones.push(capsule(points[i], points[i + 1], radiusAt(i), radiusAt(i + 1), meta));
-  return k > 0 ? blend(k, ...cones) : union(...cones);
+  const group = (list) => (list.length <= 6 ? (k > 0 ? blend(k, ...list) : union(...list)) : k > 0 ? blend(k, ...chunks(list).map(group)) : union(...chunks(list).map(group)));
+  return group(cones);
+}
+
+const chunks = (list) => {
+  const size = Math.ceil(list.length / Math.min(6, Math.ceil(list.length / 6)));
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
 }
 
 export const blend = (k, ...of) => ({ op: "blend", k, of: of.flat(Infinity).filter(Boolean) });
@@ -117,57 +126,100 @@ function leafOf(node) {
   throw new Error(`blob: unknown primitive ${node.op}`);
 }
 
-function compile(node, ctx, reach, cutter) {
-  if (node.op === "blend" || node.op === "union" || node.op === "carve" || node.op === "clip") {
-    const k = node.op === "union" ? 0 : node.k;
+function enclose(spheres, grow = 0) {
+  const min = [0, 1, 2].map((i) => Math.min(...spheres.map(([c, r]) => c[i] - r)));
+  const max = [0, 1, 2].map((i) => Math.max(...spheres.map(([c, r]) => c[i] + r)));
+  const centre = mul3(add3(min, max), 0.5);
+  return [centre, Math.max(...spheres.map(([c, r]) => len3(sub3(c, centre)) + r)) + grow];
+}
+
+function compile(node, ctx, reach, cutter, parent) {
+  const index = ctx.nodes.length;
+  const entry = { parent, reach, cutter, sphere: null, leaf: null };
+  ctx.nodes.push(entry);
+  const bits = ctx.bits;
+  const done = (full, masked, sphere) => {
+    entry.sphere = sphere;
+    return { full, masked, sphere, index };
+  };
+  if (node.op === "clip" || node.op === "carve") {
+    const k = node.k;
+    const base = compile(node.of[0], ctx, reach + k, cutter, index);
     if (node.op === "clip") {
-      const base = compile(node.of[0], ctx, reach + k, cutter);
       const [ox, oy, oz] = node.o;
       const [nx, ny, nz] = node.n;
       const plane = (x, y, z) => (x - ox) * nx + (y - oy) * ny + (z - oz) * nz;
-      return { full: (x, y, z) => -smin(-base.full(x, y, z), -plane(x, y, z), k), masked: (x, y, z) => -smin(-base.masked(x, y, z), -plane(x, y, z), k) };
+      return done((x, y, z) => -smin(-base.full(x, y, z), -plane(x, y, z), k), (x, y, z) => -smin(-base.masked(x, y, z), -plane(x, y, z), k), base.sphere);
     }
-    if (node.op === "carve") {
-      const base = compile(node.of[0], ctx, reach + k, cutter);
-      const cut = compile(node.of[1], ctx, reach + k, true);
-      return { full: (x, y, z) => -smin(-base.full(x, y, z), cut.full(x, y, z), k), masked: (x, y, z) => -smin(-base.masked(x, y, z), cut.masked(x, y, z), k) };
-    }
-    const kids = node.of.map((child) => compile(child, ctx, reach + k, cutter));
-    if (!kids.length) return { full: () => BIG, masked: () => BIG };
-    if (kids.length === 1) return kids[0];
+    const cut = compile(node.of[1], ctx, reach + k, true, index);
+    const ci = cut.index;
+    return done((x, y, z) => -smin(-base.full(x, y, z), cut.full(x, y, z), k), (x, y, z) => (bits.v[ci] ? -smin(-base.masked(x, y, z), cut.masked(x, y, z), k) : base.masked(x, y, z)), base.sphere);
+  }
+  if (node.op === "blend" || node.op === "union") {
+    const k = node.op === "union" ? 0 : node.k;
+    const kids = node.of.map((child) => compile(child, ctx, reach + k, cutter, index));
+    if (!kids.length) return done(() => BIG, () => BIG, [[0, 0, 0], 0]);
     const full = kids.map((kid) => kid.full);
     const masked = kids.map((kid) => kid.masked);
-    const fold = (list) => (x, y, z) => {
-      let d = list[0](x, y, z);
-      for (let i = 1; i < list.length; i++) d = smin(d, list[i](x, y, z), k);
+    const ids = Int32Array.from(kids.map((kid) => kid.index));
+    const n = kids.length;
+    const fullFold =
+      n === 1
+        ? full[0]
+        : (x, y, z) => {
+            let d = full[0](x, y, z);
+            for (let i = 1; i < n; i++) d = smin(d, full[i](x, y, z), k);
+            return d;
+          };
+    const maskedFold = (x, y, z) => {
+      const on = bits.v;
+      let d = BIG;
+      for (let i = 0; i < n; i++) {
+        if (!on[ids[i]]) continue;
+        const v = masked[i](x, y, z);
+        d = d === BIG ? v : smin(d, v, k);
+      }
       return d;
     };
-    return { full: fold(full), masked: fold(masked) };
+    return done(fullFold, maskedFold, enclose(kids.map((kid) => kid.sphere), k * 0.25));
   }
   const leaf = leafOf(node);
-  const index = ctx.leaves.length;
-  const mask = ctx.mask;
-  const [[sx, sy, sz], sr] = leaf.sphere;
-  const fn = leaf.fn;
-  ctx.leaves.push({ ...leaf, node, reach, cutter, mat: node.mat ?? ctx.mat, L: node.L ?? 1 });
-  return { full: fn, masked: (x, y, z) => (mask.bits[index] ? fn(x, y, z) : Math.hypot(x - sx, y - sy, z - sz) - sr) };
+  entry.leaf = { ...leaf, node, mat: node.mat ?? ctx.mat, L: node.L ?? 1 };
+  ctx.leaves.push({ ...entry.leaf, index, reach, cutter });
+  return done(leaf.fn, leaf.fn, leaf.sphere);
 }
 
-export function field(root, { L, steps = 600, mat = "tissue", name } = {}) {
+export function field(root, { L, steps = 600, mat = "tissue", name, mix = null } = {}) {
   const node = typeof root === "function" ? custom(root, {}) : root;
-  const mask = { bits: null };
-  const ctx = { leaves: [], mask, mat };
-  const compiled = compile(node, ctx, 0, false);
-  const leaves = ctx.leaves;
-  mask.bits = new Uint8Array(leaves.length).fill(1);
+  const bits = { v: null };
+  const ctx = { leaves: [], nodes: [], bits, mat };
+  const compiled = compile(node, ctx, 0, false, -1);
+  const { leaves, nodes } = ctx;
+  bits.v = new Uint8Array(nodes.length).fill(1);
   const solid = leaves.filter((leaf) => !leaf.cutter);
   const swell = Math.max(0, ...leaves.map((leaf) => leaf.reach)) * 0.25 + 1e-3;
   const bounds = solid.length
     ? { min: [0, 1, 2].map((i) => Math.min(...solid.map((leaf) => leaf.box[0][i])) - swell), max: [0, 1, 2].map((i) => Math.max(...solid.map((leaf) => leaf.box[1][i])) + swell) }
     : null;
   const materials = [...new Set(solid.map((leaf) => leaf.mat))];
-  const matIndex = new Uint8Array(leaves.length);
-  leaves.forEach((leaf, index) => (matIndex[index] = Math.max(0, materials.indexOf(leaf.mat))));
+  const base = materials.length;
+  const matOf = leaves.map((leaf) => Math.max(0, materials.indexOf(leaf.mat)));
+  const blends = new Map();
+  if (mix)
+    for (const [a, b, own = {}] of mix.pairs ?? []) {
+      const ia = materials.indexOf(a);
+      const ib = materials.indexOf(b);
+      if (ia < 0 || ib < 0) continue;
+      const steps = own.steps ?? mix.steps ?? 3;
+      const ids = [];
+      for (let step = 1; step <= steps; step++) {
+        ids.push(materials.length);
+        materials.push(`${a}~${b}~${step}~${steps}`);
+      }
+      const pair = { a: ia, b: ib, ids, width: own.width ?? mix.width ?? 3, bias: own.bias ?? mix.bias ?? 0 };
+      blends.set(ia * 256 + ib, pair);
+      blends.set(ib * 256 + ia, pair);
+    }
   const lipschitz = L ?? Math.max(1, ...leaves.map((leaf) => leaf.L));
   const F = {
     kind: "blob",
@@ -179,26 +231,31 @@ export function field(root, { L, steps = 600, mat = "tissue", name } = {}) {
     steps,
     bounds,
     v: compiled.full,
-    vm: compiled.masked,
+    vm: (x, y, z) => (bits.v[compiled.index] ? compiled.masked(x, y, z) : BIG),
     value: (p) => compiled.full(p[0], p[1], p[2]),
   };
-  F.unmask = () => mask.bits.fill(1);
+  F.unmask = () => bits.v.fill(1);
+  const spheres = nodes.map((entry) => entry.sphere);
   F.rayMask = (c, V) => {
     let t0 = BIG;
     let t1 = -BIG;
-    const bits = mask.bits;
-    for (let i = 0; i < leaves.length; i++) {
-      const leaf = leaves[i];
-      const [[sx, sy, sz], sr] = leaf.sphere;
+    const on = bits.v;
+    for (let i = 0; i < nodes.length; i++) {
+      const entry = nodes[i];
+      if (entry.parent >= 0 && !on[entry.parent]) {
+        on[i] = 0;
+        continue;
+      }
+      const [[sx, sy, sz], sr] = spheres[i];
       const wx = sx - c[0];
       const wy = sy - c[1];
       const wz = sz - c[2];
       const along = wx * V[0] + wy * V[1] + wz * V[2];
       const perp = wx * wx + wy * wy + wz * wz - along * along;
-      const reach = sr + leaf.reach + 0.05;
-      const on = perp <= reach * reach;
-      bits[i] = on ? 1 : 0;
-      if (on && !leaf.cutter) {
+      const reach = sr + entry.reach + 0.05;
+      const hit = perp <= reach * reach;
+      on[i] = hit ? 1 : 0;
+      if (hit && entry.leaf && !entry.cutter) {
         const half = Math.sqrt(Math.max(0, reach * reach - perp)) + 0.05;
         t0 = Math.min(t0, along - half);
         t1 = Math.max(t1, along + half);
@@ -206,14 +263,15 @@ export function field(root, { L, steps = 600, mat = "tissue", name } = {}) {
     }
     return t1 > t0 ? [t0, t1] : null;
   };
-  F.march = (c, V, eps = 0.005, span = null) => {
+  F.march = (c, V, eps = 0.005, span = null, track = null) => {
     const own = F.rayMask(c, V);
     if (!own) return null;
     const lo = span ? Math.max(own[0], span[0]) : own[0];
     let t = span ? Math.min(own[1], span[1]) : own[1];
     const step = 1 / lipschitz;
     for (let i = 0; i < steps; i++) {
-      const d = compiled.masked(c[0] + V[0] * t, c[1] + V[1] * t, c[2] + V[2] * t);
+      const d = F.vm(c[0] + V[0] * t, c[1] + V[1] * t, c[2] + V[2] * t);
+      if (track && d < track.least) track.least = d;
       if (d < eps) return t;
       t -= Math.max(d * step, eps * 0.5);
       if (t < lo - eps) return null;
@@ -221,20 +279,31 @@ export function field(root, { L, steps = 600, mat = "tissue", name } = {}) {
     return null;
   };
   F.gradient = (x, y, z, h = 0.01, masked = false) => {
-    const f = masked ? compiled.masked : compiled.full;
+    const f = masked ? F.vm : compiled.full;
     return [(f(x + h, y, z) - f(x - h, y, z)) / (2 * h), (f(x, y + h, z) - f(x, y - h, z)) / (2 * h), (f(x, y, z + h) - f(x, y, z - h)) / (2 * h)];
   };
   F.normal = (x, y, z, masked = false) => unit3(F.gradient(x, y, z, 0.01, masked));
+  const nearest = new Float64Array(base);
   F.material = (x, y, z, masked = false) => {
     let best = BIG;
     let index = 0;
-    const bits = mask.bits;
+    const on = bits.v;
+    if (blends.size) nearest.fill(BIG);
     for (let i = 0; i < leaves.length; i++) {
-      if (leaves[i].cutter || (masked && !bits[i])) continue;
+      if (leaves[i].cutter || (masked && !on[leaves[i].index])) continue;
       const d = leaves[i].fn(x, y, z);
       if (d < best) (best = d), (index = i);
+      if (blends.size && d < nearest[matOf[i]]) nearest[matOf[i]] = d;
     }
-    return matIndex[index];
+    const first = matOf[index];
+    if (!blends.size) return first;
+    let second = -1;
+    for (let m = 0; m < base; m++) if (m !== first && (second < 0 || nearest[m] < nearest[second])) second = m;
+    const pair = second >= 0 && blends.get(first * 256 + second);
+    if (!pair) return first;
+    const share = Math.max(0, Math.min(1, 0.5 + (nearest[pair.a] - nearest[pair.b] - pair.bias) / pair.width));
+    const step = Math.round(share * (pair.ids.length + 1));
+    return step <= 0 ? pair.a : step > pair.ids.length ? pair.b : pair.ids[step - 1];
   };
   return F;
 }
@@ -335,19 +404,35 @@ function simplifyRing(ring, tolerance) {
   return [...one.slice(0, -1), ...two.slice(0, -1)];
 }
 
-const num = (v) => {
-  const text = (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, "");
+const tenth = (v) => Math.round(v * 10);
+
+const numOf = (tenths) => {
+  const text = (tenths / 10).toFixed(1).replace(/\.0$/, "").replace(/^(-?)0\./, "$1.");
   return text === "-0" ? "0" : text;
 };
+
+const joinNumbers = (values) => values.reduce((out, value, index) => out + (index && !value.startsWith("-") ? " " : "") + value, "");
 
 export function curvePath(points, closed) {
   const n = points.length;
   if (n < 2) return "";
-  if (n === 2 && !closed) return `M${num(points[0][0])} ${num(points[0][1])}L${num(points[1][0])} ${num(points[1][1])}`;
+  let cx = tenth(points[0][0]);
+  let cy = tenth(points[0][1]);
+  const start = [cx, cy];
+  const parts = [`M${joinNumbers([numOf(cx), numOf(cy)])}`];
+  const rel = (list) => {
+    const out = [];
+    for (let i = 0; i < list.length; i += 2) out.push(numOf(tenth(list[i]) - cx), numOf(tenth(list[i + 1]) - cy));
+    return out;
+  };
+  if (n === 2 && !closed) {
+    parts.push(`l${joinNumbers(rel(points[1]))}`);
+    return parts.join("");
+  }
   const at = (i) => (closed ? points[(i + n) % n] : points[Math.max(0, Math.min(n - 1, i))]);
   const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]) || 1e-9;
-  const parts = [`M${num(points[0][0])} ${num(points[0][1])}`];
   const count = closed ? n : n - 1;
+  const segments = [];
   for (let i = 0; i < count; i++) {
     const p0 = at(i - 1);
     const p1 = at(i);
@@ -358,11 +443,17 @@ export function curvePath(points, closed) {
     const d23 = !closed && i === count - 1 ? 0 : dist(p2, p3);
     const t1 = d01 ? [(p2[0] - p0[0]) / (d01 + d12), (p2[1] - p0[1]) / (d01 + d12)] : [(p2[0] - p1[0]) / d12, (p2[1] - p1[1]) / d12];
     const t2 = d23 ? [(p3[0] - p1[0]) / (d12 + d23), (p3[1] - p1[1]) / (d12 + d23)] : [(p2[0] - p1[0]) / d12, (p2[1] - p1[1]) / d12];
-    const c1 = [p1[0] + (t1[0] * d12) / 3, p1[1] + (t1[1] * d12) / 3];
-    const c2 = [p2[0] - (t2[0] * d12) / 3, p2[1] - (t2[1] * d12) / 3];
-    parts.push(`C${num(c1[0])} ${num(c1[1])} ${num(c2[0])} ${num(c2[1])} ${num(p2[0])} ${num(p2[1])}`);
+    const values = rel([p1[0] + (t1[0] * d12) / 3, p1[1] + (t1[1] * d12) / 3, p2[0] - (t2[0] * d12) / 3, p2[1] - (t2[1] * d12) / 3, p2[0], p2[1]]);
+    segments.push(joinNumbers(values));
+    cx = tenth(p2[0]);
+    cy = tenth(p2[1]);
   }
-  return parts.join("") + (closed ? "Z" : "");
+  parts.push(`c${segments.join(" ")}`);
+  if (closed) {
+    cx = start[0];
+    cy = start[1];
+  }
+  return parts.join("") + (closed ? "z" : "");
 }
 
 function nearestOn(lines, p) {
@@ -385,7 +476,7 @@ function nearestOn(lines, p) {
   return best;
 }
 
-export function paint(F, P, { cell = 0.4, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.08, fade = 7, least = 0.15 } = {}) {
+export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true } = {}) {
   if (!F.bounds) throw new Error("blob.paint: the field has no bounds");
   const started = Date.now();
   const cam = basisOf(P);
@@ -395,8 +486,9 @@ export function paint(F, P, { cell = 0.4, pad = 3, eps = 0.004, light, jump = 1.
   const box = screenBoxOf(F, cam);
   const x0 = Math.floor((box[0] - pad) / cell) * cell;
   const y0 = Math.floor((box[1] - pad) / cell) * cell;
-  const nx = Math.ceil((box[2] + pad - x0) / cell) + 1;
-  const ny = Math.ceil((box[3] + pad - y0) / cell) + 1;
+  const C = Math.max(1, Math.round(coarse));
+  const nx = Math.ceil((box[2] + pad - x0) / cell / C) * C + 1;
+  const ny = Math.ceil((box[3] + pad - y0) / cell / C) * C + 1;
   let probes = 0;
   const probe = (x, y) => {
     probes++;
@@ -409,8 +501,50 @@ export function paint(F, P, { cell = 0.4, pad = 3, eps = 0.004, light, jump = 1.
     const n = F.normal(p[0], p[1], p[2], true);
     return { hit: true, t, n, score: dot3(n, L), mat: F.materials.length > 1 ? F.material(p[0], p[1], p[2], true) : 0 };
   };
-  const grid = new Array(nx * ny);
-  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) grid[j * nx + i] = probe(x0 + i * cell, y0 + j * cell);
+  const grid = new Array(nx * ny).fill(null);
+  const real = (i, j) => grid[j * nx + i] ?? (grid[j * nx + i] = probe(x0 + i * cell, y0 + j * cell));
+  const cx = (nx - 1) / C;
+  const cy = (ny - 1) / C;
+  for (let J = 0; J <= cy; J++) for (let I = 0; I <= cx; I++) real(I * C, J * C);
+  const coarseHit = (I, J) => I >= 0 && J >= 0 && I <= cx && J <= cy && grid[J * C * nx + I * C].hit;
+  const near = (I, J) => {
+    for (let b = J - 1; b <= J + 2; b++) for (let a = I - 1; a <= I + 2; a++) if (coarseHit(a, b)) return true;
+    return false;
+  };
+  const MISS = { hit: false };
+  const level = (r) => {
+    let band = 0;
+    while (band < BANDS.length && r.score >= BANDS[band]) band++;
+    return band;
+  };
+  const turnOf = (a, b) => (Math.acos(Math.max(-1, Math.min(1, dot3(a.n, b.n)))) * 180) / Math.PI;
+  const plan = [];
+  for (let J = 0; J < cy; J++)
+    for (let I = 0; I < cx; I++) {
+      const corners = [[I, J], [I + 1, J], [I + 1, J + 1], [I, J + 1]].map(([a, b]) => grid[b * C * nx + a * C]);
+      const [a] = corners;
+      if (!near(I, J)) plan.push([I, J, "miss"]);
+      else if (corners.every((r) => r.hit && r.mat === a.mat && level(r) === level(a) && Math.abs(r.t - a.t) < jump * 0.6 && turnOf(r, a) < 14)) plan.push([I, J, "fill", corners]);
+      else plan.push([I, J, "probe"]);
+    }
+  for (const [I, J, kind] of plan) if (kind === "probe") for (let b = J * C; b <= J * C + C; b++) for (let a = I * C; a <= I * C + C; a++) real(a, b);
+  for (const [I, J, kind, corners] of plan) {
+    if (kind === "probe") continue;
+    for (let b = J * C; b <= J * C + C; b++)
+      for (let a = I * C; a <= I * C + C; a++) {
+        const id = b * nx + a;
+        if (grid[id]) continue;
+        if (kind === "miss") {
+          grid[id] = MISS;
+          continue;
+        }
+        const u = (a - I * C) / C;
+        const v = (b - J * C) / C;
+        const w = [(1 - u) * (1 - v), u * (1 - v), u * v, (1 - u) * v];
+        const mix = (key) => corners.reduce((sum, r, n) => sum + r[key] * w[n], 0);
+        grid[id] = { hit: true, t: mix("t"), score: mix("score"), mat: corners[0].mat, n: corners[0].n };
+      }
+  }
   F.unmask();
   const pos = (i, j) => [x0 + i * cell, y0 + j * cell];
   const centres = new Map();
@@ -587,30 +721,41 @@ export function paint(F, P, { cell = 0.4, pad = 3, eps = 0.004, light, jump = 1.
       if (total < 1.2) continue;
       const ramp = Math.min(fade, total * 0.4);
       const tone = kinds.filter((kind) => kind === "contour").length >= kinds.length / 2 ? "hi" : "lo";
-      inner.push({ points: simplify(pts, smooth * 0.6), fade: [ends[0] ? 0 : ramp, ends[1] ? 0 : ramp], tone });
+      inner.push({ points: simplify(pts, 0.04), fade: [ends[0] ? 0 : ramp, ends[1] ? 0 : ramp], tone });
     } else {
       const tone = kinds.filter((kind) => kind === "contour").length >= kinds.length / 2 ? "hi" : "lo";
-      inner.push({ points: [...simplifyRing(pts, smooth * 0.6), pts[0]], fade: [0, 0], tone, closed: true });
+      inner.push({ points: [...simplifyRing(pts, 0.04), pts[0]], fade: [0, 0], tone, closed: true });
     }
   }
-  const seams = layers.filter(Boolean).flatMap((layer) => layer.seams).filter((s) => lengthOf(s.points) > 1);
+  const seams = withSeams ? layers.filter(Boolean).flatMap((layer) => layer.seams).filter((s) => lengthOf(s.points) > 1) : [];
   return { layers: layers.filter(Boolean), outline, inner, seams, box, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };
 }
 
 const attr = (name, value) => (value === undefined || value === null || value === false ? "" : value === true || value === "" ? ` ${name}` : ` ${name}="${value}"`);
 
+const TOKENS = ["--anatomy-shade-0", "--anatomy-shade-1", "--anatomy-shade-2", "--anatomy-shade-3", "--anatomy-top"];
+
+export function mixStyle(a, b, share) {
+  const pct = Math.round((1 - share) * 100);
+  return TOKENS.map((token, n) => `${token}:color-mix(in srgb,var(--tissue-${a}-${n}) ${pct}%,var(--tissue-${b}-${n}))`).join(";");
+}
+
 export function fieldSvg(painted, { tone = "hi", tissue = {}, className, seamTone = "lo" } = {}) {
   const layers = painted.layers
     .map(({ mat, paths }) => {
       const shades = paths.shades.map((d, shade) => (d ? `<path class="iso-shade" data-shade="${shade}" d="${d}"/>` : "")).join("");
-      return `<g class="iso-solid"${attr("data-seamless", true)}${attr("data-tissue", tissue[mat] ?? mat)}><path class="iso-fill" d="${paths.fill}"/>${shades}${paths.top ? `<path class="iso-top" d="${paths.top}"/>` : ""}</g>`;
+      const mixed = mat.match(/^(.+)~(.+)~(\d+)~(\d+)$/);
+      const look = mixed ? `${attr("data-tissue", `${tissue[mixed[1]] ?? mixed[1]}-${tissue[mixed[2]] ?? mixed[2]}`)} style="${mixStyle(tissue[mixed[1]] ?? mixed[1], tissue[mixed[2]] ?? mixed[2], Number(mixed[3]) / (Number(mixed[4]) + 1))}"` : attr("data-tissue", tissue[mat] ?? mat);
+      return `<g class="iso-solid"${attr("data-seamless", true)}${look}>${shades}${paths.top ? `<path class="iso-top" d="${paths.top}"/>` : ""}</g>`;
     })
     .join("");
   const lines = painted.inner
     .map((line) => (line.fade[0] || line.fade[1] ? fadeLineSvg(line.points, { fade: line.fade, tone: line.tone }) : `<path class="iso-line" data-tone="${line.tone}" d="${curvePath(line.points, false)}"/>`))
     .join("");
   const seams = painted.seams.map((seam) => `<path class="iso-line" data-tone="${seamTone}" d="${curvePath(simplify(seam.points, 0.05), false)}"/>`).join("");
-  return `<g class="sp-field${className ? ` ${className}` : ""}">${layers}<g class="iso-solid">${seams}${lines}<path class="iso-line iso-edge" data-tone="${tone}" d="${painted.outline}"/></g></g>`;
+  const first = painted.layers[0];
+  const under = painted.layers.length > 1 && first ? `<g class="iso-solid"${attr("data-tissue", tissue[first.mat] ?? first.mat)}><path class="iso-shade" data-shade="1" d="${painted.outline}"/></g>` : "";
+  return `<g class="sp-field${className ? ` ${className}` : ""}">${under}${layers}<g class="iso-solid">${seams}${lines}<path class="iso-line iso-edge" data-tone="${tone}" d="${painted.outline}"/></g></g>`;
 }
 
 export function surfaceSamples(F, spacing = 0.6, { offset = [0, 0, 0] } = {}) {

@@ -23,20 +23,23 @@ const started = Date.now();
 
 const WIDTH = 560;
 const HEIGHT = 620;
-export const VIEWS = [15, 45, 75, 105];
-const DEFAULT = VIEWS.indexOf(15);
+export const VIEWS = ["15", "45", "75", "105"];
+const DEFAULT = VIEWS.indexOf("15");
 const CELL = quick ? 0.7 : 0.4;
 const TISSUE = { muscle: "muscle", oxy: "oxy", deoxy: "deoxy", coronary: "coronary" };
 
-function view(azimuth) {
+function view(spec) {
+  const cut = spec === "cut";
+  const azimuth = cut ? 15 : Number(spec);
+  const FIELD = HEART;
   const t0 = Date.now();
   const box = [...k.boxCorners({ x: -PLINTH.r, y: -PLINTH.r, w: 2 * PLINTH.r, d: 2 * PLINTH.r, r: 0 }, 0, PLINTH.h), HEART.bounds.min, HEART.bounds.max, [HEART.bounds.min[0], HEART.bounds.max[1], HEART.bounds.max[2]], [HEART.bounds.max[0], HEART.bounds.min[1], HEART.bounds.max[2]]];
   const P = k.fitProjection(box, WIDTH, HEIGHT, { pad: 26, azimuth, elevation: 24 });
   const R = A.recorder(P);
   const at = (p) => k.iso(p, P);
   const F = G.frameOf([0, 0, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-  const plinth = [[0, PLINTH.r], [1.4, PLINTH.r], [2.2, PLINTH.r - 0.8], [3, PLINTH.r - 1.6], [7.6, PLINTH.r - 2.4], [8.6, PLINTH.r - 3.4], [PLINTH.h, PLINTH.r - 4.4]];
-  const seams = k.lineSvg(G.arcOf(F, 1.4, PLINTH.r, P), { tone: "faint" }) + k.lineSvg(G.arcOf(F, 7.6, PLINTH.r - 2.4, P), { tone: "faint" });
+  const plinth = [[0, PLINTH.r], [1.6, PLINTH.r], [2.8, PLINTH.r - 1.4], [8.4, PLINTH.r - 2.6], [PLINTH.h, PLINTH.r - 4.4]];
+  const seams = "";
   const top = PLINTH.h;
   const ringR = PLINTH.r - 9;
   const screws = [0, 1, 2, 3].map((i) => G.pointOf(F, top, ringR, Math.PI / 4 + (i * Math.PI) / 2));
@@ -49,20 +52,20 @@ function view(azimuth) {
   const postFrame = G.frameOf([px, py, top + 3.6], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
   const length = POST_TOP - top - 3.6;
   R.put({ name: "stand.post", at: [px, py, top + 3.6 + length / 3], svg: k.solidSvg(G.disc(0, length, POST.r, postFrame, P), { tone: "mid" }), shapes: [R.solid(A.disc(postFrame, 0, length, POST.r, { name: "stand.post", blend: ["heart"] }))] });
-  const painted = B.paint(HEART, P, { cell: CELL, coarse: quick ? 3 : 2, seams: false, smooth: 0.3 });
+  const painted = B.paint(FIELD, P, { cell: CELL, coarse: quick ? 3 : 2, seams: false, smooth: 0.5, toneSmooth: 0.5, jump: 3.5, tones: "overlay", base: "muscle" });
   const centre = at(W([6, 0, 0]));
-  R.put({ name: "heart", at: W([4, 0, 10]), svg: `<g data-part="heart" data-cx="${centre[0].toFixed(2)}" data-cy="${centre[1].toFixed(2)}">${B.fieldSvg(painted, { tone: "hi", tissue: TISSUE })}</g>`, shapes: [R.solid(A.field(HEART, { name: "heart" }))] });
+  R.put({ name: "heart", at: W([4, 0, 10]), svg: `<g data-part="heart" data-cx="${centre[0].toFixed(2)}" data-cy="${centre[1].toFixed(2)}">${B.fieldSvg(painted, { tone: "hi", tissue: TISSUE })}</g>`, shapes: [R.solid(A.field(FIELD, { name: "heart" }))] });
   A.settle(R, P);
   R.items.sort((a, b) => a.key - b.key);
   const body = R.items.map((item) => item.svg).join("");
-  const svg = k.figureSvg({ width: WIDTH, height: HEIGHT, label: `Classroom model of a human heart on a turned plinth, seen from the front, turned ${azimuth - 15} degrees: ventricles with the apex to the model's left, both atria and auricles, the aortic arch with its three branches, the pulmonary trunk splitting in two, the venae cavae and the coronary arteries on the surface.`, body, className: "hr-view" });
-  return { azimuth, P, R, svg, centre, painted, ms: Date.now() - t0 };
+  const svg = B.compactSvg(k.figureSvg({ width: WIDTH, height: HEIGHT, label: cut ? "The same heart model opened along the four-chamber plane: the cut face shows the walls of both atria and both ventricles, the septum between them, the mitral and tricuspid valve leaflets with their papillary muscles, and the lumens of the cut great vessels." : `Classroom model of a human heart on a turned plinth, seen from the front, turned ${azimuth - 15} degrees: ventricles with the apex to the model's left, both atria and auricles, the aortic arch with its three branches, the pulmonary trunk splitting in two, the venae cavae and the coronary arteries on the surface.`, body, className: "hr-view" }), { tolerance: 0.3 });
+  return { spec, azimuth, cut, P, R, svg, centre, painted, ms: Date.now() - t0 };
 }
 
 
 if (child) {
   const [azimuth, out] = child.slice(8).split(",");
-  const v = view(Number(azimuth));
+  const v = view(azimuth);
   let report = "";
   let failed = 0;
   if (auditing) {
@@ -70,14 +73,14 @@ if (child) {
     failed = A.failures(result);
     report = A.report(result);
   }
-  writeFileSync(out, JSON.stringify({ azimuth: v.azimuth, svg: v.svg, centre: v.centre, items: v.R.items.length, rays: v.painted.stats.probes, ms: v.ms, report, failed }));
+  writeFileSync(out, JSON.stringify({ spec: v.spec, cut: v.cut, azimuth: v.azimuth, svg: v.svg, centre: v.centre, items: v.R.items.length, rays: v.painted.stats.probes, ms: v.ms, report, failed }));
 } else {
   await main();
 }
 
 async function main() {
   const dir = mkdtempSync(join(tmpdir(), "heart-"));
-  const chosen = only ? [Number(only.split("=")[1])] : VIEWS;
+  const chosen = only ? [only.split("=")[1]] : VIEWS;
   const views = await Promise.all(
     chosen.map(
       (azimuth) =>
@@ -91,9 +94,9 @@ async function main() {
   rmSync(dir, { recursive: true, force: true });
   let failed = 0;
   for (const v of views) {
-    console.log(`view ${v.azimuth}°: ${v.items} items · ${v.rays} rays · ${(v.svg.length / 1024).toFixed(1)} KB · ${(v.ms / 1000).toFixed(1)} s`);
+    console.log(`view ${v.spec}: ${v.items} items · ${v.rays} rays · ${(v.svg.length / 1024).toFixed(1)} KB · ${(v.ms / 1000).toFixed(1)} s`);
     if (auditing) {
-      console.log(`--- view ${v.azimuth}°\n${v.report}\n${v.failed ? `view failed: ${v.failed}` : "view passed"}`);
+      console.log(`--- view ${v.spec}\n${v.report}\n${v.failed ? `view failed: ${v.failed}` : "view passed"}`);
       failed += v.failed;
     }
   }
@@ -103,13 +106,13 @@ async function main() {
   }
   const live = readFileSync(join(HERE, "live.js"), "utf8")
     .replace("__MODEL__", readFileSync(join(HERE, "model.mjs"), "utf8").replace(/^export /gm, ""))
-    .replace("__VIEWS__", JSON.stringify(views.map((v) => ({ azimuth: v.azimuth, centre: v.centre }))))
+    .replace("__VIEWS__", JSON.stringify(views.map((v) => ({ azimuth: v.azimuth, cut: v.cut, centre: v.centre }))))
     .replace("__DEFAULT__", String(only ? 0 : DEFAULT));
   const css = readFileSync(join(HERE, "heart.css"), "utf8");
   const first = only ? 0 : DEFAULT;
   const stack = views.map((v, index) => v.svg.replace("<svg ", `<svg data-view="${index}"${index === first ? " data-on" : ""} aria-hidden="${index === first ? "false" : "true"}" `)).join("");
-  const dots = views.map((v, index) => `<button type="button" class="hr-dot" data-go="${index}"${index === first ? ' aria-current="true"' : ""} aria-label="View from ${v.azimuth}°"></button>`).join("");
-  const body = `<style>${css}</style>` + k.plateHtml({
+  const dots = views.map((v, index) => `<button type="button" class="hr-dot" data-go="${index}"${index === first ? ' aria-current="true"' : ""} aria-label="${v.cut ? "Four-chamber cut" : `View from ${v.azimuth}°`}"></button>${v.cut ? "" : ""}`).join("");
+  const body = `<style>${B.FIELD_CSS}${css}</style>` + k.plateHtml({
     fig: "Fig 1",
     title: "Heart",
     hint: "← → turn · ↑ ↓ rate",

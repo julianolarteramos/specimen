@@ -38,7 +38,7 @@ const along = (from, to, side) => {
   return [Wd(d), Wd(u)];
 };
 
-function cutVessel(local, r0, r1, mat, { lumen = 0.6, depth = 12, k = 0.5, step = r0 > 9 ? 0.45 : 0.8 } = {}) {
+function cutVessel(local, r0, r1, mat, { lumen = 0.6, depth = 12, k = 0.5, step = r0 >= 6 ? 0.4 : 0.7 } = {}) {
   const points = spline(local.map(W), step);
   const last = points[points.length - 1];
   const tangent = G.unit3(G.sub3(last, points[points.length - 2]));
@@ -60,7 +60,7 @@ const AORTA = cutVessel([[-4, 8, 22], [-12, 12, 56], [-9, 6, 78], [1, -8, 89], [
 const BRACHIOCEPHALIC = cutVessel([[-8, 3, 82], [-13, 5, 100], [-17, 7, 117]], 6.8, 6.2, "oxy");
 const CAROTID = cutVessel([[2, -8, 86], [3, -8, 104], [4, -8, 119]], 4.6, 4.3, "oxy");
 const SUBCLAVIAN = cutVessel([[12, -19, 85], [17, -23, 100], [21, -26, 114]], 5.2, 4.8, "oxy");
-const TRUNK = B.vessel(spline([[4, 19, 27], [5, 15, 38], [6, 9, 48], [6, 6, 52]].map(W), 0.8), (t) => 13.5 - 2 * t, { mat: "deoxy" });
+const TRUNK = B.vessel(spline([[4, 19, 27], [5, 15, 38], [6, 9, 48], [6, 6, 52]].map(W), 0.4), (t) => 13.5 - 2 * t, { mat: "deoxy" });
 const LPA = cutVessel([[6, 6, 52], [19, -5, 58], [29, -17, 58]], 9, 8, "deoxy");
 const RPA = cutVessel([[6, 6, 52], [-6, -14, 60], [-25, -21, 62]], 9, 8, "deoxy");
 const SVC = cutVessel([[-35, -4, 36], [-35, -5, 70], [-34, -5, 96]], 10, 9.5, "deoxy");
@@ -110,13 +110,13 @@ function coronary(local, r0, r1, { rise = [0, 0.22], dive = [0.86, 1], mat = "co
 
 const LAD = coronary([[10, 14, 30], [10, 28, 14], [12, 36, -4], [18, 36, -22], [26, 30, -38], [33, 22, -50]], 1.7, 0.9);
 const DIAGONAL = coronary([[12, 36, -4], [21, 34, -9], [31, 27, -15], [39, 19, -21]], 1.1, 0.7, { rise: [-1, -0.5], dive: [0.8, 1] });
-const RCA = coronary([[-10, 18, 26], [-22, 22, 18], [-32, 19, 7], [-38, 11, -4], [-39, 0, -14]], 1.7, 1);
+const RCA = coronary([[-15, 21, 34], [-12, 20, 28], [-22, 22, 18], [-32, 19, 7], [-38, 11, -4], [-39, 0, -14]], 1.7, 1);
 const CIRCUMFLEX = coronary([[16, 6, 30], [26, -2, 28], [34, -10, 22], [38, -18, 13]], 1.4, 0.9);
 const CORONARIES = [LAD, DIAGONAL, RCA, CIRCUMFLEX];
 const draped = (local, r0, r1) => coronary(local, r0, r1, { mat: "muscle", raise: 0.25, sink: 1.2, rise: [0, 0.25], dive: [0.75, 1] });
 const AURICLES = [draped([[24, -16, 42], [30, -4, 42], [28, 8, 38], [21, 16, 33]], 7.5, 3.6), draped([[-36, -2, 40], [-31, 10, 44], [-22, 18, 46], [-14, 22, 44]], 8, 4)];
 
-export const MIX = { pairs: [["muscle", "oxy"], ["muscle", "deoxy"], ["muscle", "coronary", { steps: 0, width: 0.3, bias: 0.05 }]], width: 9, steps: 3, bias: 3 };
+export const MIX = { pairs: [["muscle", "oxy"], ["muscle", "deoxy"], ["muscle", "coronary", { steps: 0, width: 0.3, bias: 0.05 }]], width: 9, steps: 2, bias: 3 };
 export const HEART = B.field(B.blend(0.7, B.blend(3, B.blend(2.5, BODY, ...AURICLES), ...VESSELS), ...CORONARIES), { name: "heart", mix: MIX });
 
 function postTop() {
@@ -125,4 +125,5 @@ function postTop() {
   throw new Error("the post never reaches the heart");
 }
 export const POST_TOP = postTop() + 5;
+
 

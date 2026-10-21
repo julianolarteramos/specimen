@@ -46,9 +46,13 @@ export const blend = (k, ...of) => ({ op: "blend", k, of: of.flat(Infinity).filt
 
 export const union = (...of) => ({ op: "union", of: of.flat(Infinity).filter(Boolean) });
 
-export const carve = (base, cutter, k = 0) => ({ op: "carve", k, of: [base, cutter] });
+export const carve = (base, cutter, k = 0, meta = {}) => ({ op: "carve", k, of: [base, cutter], ...meta });
 
-export const clip = (base, o, n, k = 0) => ({ op: "clip", k, o, n: unit3(n), of: [base] });
+export const intersect = (k, ...of) => ({ op: "intersect", k, of: of.flat(Infinity).filter(Boolean) });
+
+export const halfspace = (o, n, meta = {}) => ({ op: "half", o, n: unit3(n), ...meta });
+
+export const clip = (base, o, n, k = 0, meta = {}) => ({ op: "clip", k, o, n: unit3(n), of: [base], ...meta });
 
 export const custom = (f, { bounds, L = 1, ...meta } = {}) => ({ op: "custom", f, bounds, L, ...meta });
 
@@ -118,6 +122,11 @@ function leafOf(node) {
       sphere: [mid, Math.sqrt(l2) / 2 + big],
     };
   }
+  if (node.op === "half") {
+    const [ox, oy, oz] = node.o;
+    const [nx, ny, nz] = node.n;
+    return { fn: (x, y, z) => (x - ox) * nx + (y - oy) * ny + (z - oz) * nz, box: [[-BIG, -BIG, -BIG], [BIG, BIG, BIG]], sphere: [node.o, BIG] };
+  }
   if (node.op === "custom") {
     const { min, max } = node.bounds ?? { min: [-BIG, -BIG, -BIG], max: [BIG, BIG, BIG] };
     const centre = mul3(add3(min, max), 0.5);
@@ -149,11 +158,25 @@ function compile(node, ctx, reach, cutter, parent) {
       const [ox, oy, oz] = node.o;
       const [nx, ny, nz] = node.n;
       const plane = (x, y, z) => (x - ox) * nx + (y - oy) * ny + (z - oz) * nz;
+      if (node.mat) ctx.planes.push({ plane, mat: node.mat, index });
       return done((x, y, z) => -smin(-base.full(x, y, z), -plane(x, y, z), k), (x, y, z) => -smin(-base.masked(x, y, z), -plane(x, y, z), k), base.sphere);
     }
     const cut = compile(node.of[1], ctx, reach + k, true, index);
     const ci = cut.index;
+    if (node.mat) ctx.planes.push({ plane: cut.full, mat: node.mat, index });
     return done((x, y, z) => -smin(-base.full(x, y, z), cut.full(x, y, z), k), (x, y, z) => (bits.v[ci] ? -smin(-base.masked(x, y, z), cut.masked(x, y, z), k) : base.masked(x, y, z)), base.sphere);
+  }
+  if (node.op === "intersect") {
+    const k = node.k;
+    const kids = node.of.map((child) => compile(child, ctx, reach + k, cutter, index));
+    const full = kids.map((kid) => kid.full);
+    const masked = kids.map((kid) => kid.masked);
+    const fold = (list) => (x, y, z) => {
+      let d = -list[0](x, y, z);
+      for (let i = 1; i < list.length; i++) d = smin(d, -list[i](x, y, z), k);
+      return -d;
+    };
+    return done(fold(full), fold(masked), kids[0].sphere);
   }
   if (node.op === "blend" || node.op === "union") {
     const k = node.op === "union" ? 0 : node.k;
@@ -184,15 +207,17 @@ function compile(node, ctx, reach, cutter, parent) {
     return done(fullFold, maskedFold, enclose(kids.map((kid) => kid.sphere), k * 0.25));
   }
   const leaf = leafOf(node);
+  if (node.seam) ctx.seams.push(leaf.fn);
   entry.leaf = { ...leaf, node, mat: node.mat ?? ctx.mat, L: node.L ?? 1 };
-  ctx.leaves.push({ ...entry.leaf, index, reach, cutter });
+  if (node.op === "half") entry.cutter = true;
+  ctx.leaves.push({ ...entry.leaf, index, reach, cutter: cutter || node.op === "half" });
   return done(leaf.fn, leaf.fn, leaf.sphere);
 }
 
 export function field(root, { L, steps = 600, mat = "tissue", name, mix = null } = {}) {
   const node = typeof root === "function" ? custom(root, {}) : root;
   const bits = { v: null };
-  const ctx = { leaves: [], nodes: [], bits, mat };
+  const ctx = { leaves: [], nodes: [], bits, mat, planes: [], seams: [] };
   const compiled = compile(node, ctx, 0, false, -1);
   const { leaves, nodes } = ctx;
   bits.v = new Uint8Array(nodes.length).fill(1);
@@ -203,6 +228,10 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null }
     : null;
   const materials = [...new Set(solid.map((leaf) => leaf.mat))];
   const base = materials.length;
+  const faces = ctx.planes.map((face) => {
+    if (!materials.includes(face.mat)) materials.push(face.mat);
+    return { ...face, m: materials.indexOf(face.mat) };
+  });
   const matOf = leaves.map((leaf) => Math.max(0, materials.indexOf(leaf.mat)));
   const blends = new Map();
   if (mix)
@@ -235,6 +264,9 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null }
     value: (p) => compiled.full(p[0], p[1], p[2]),
   };
   F.unmask = () => bits.v.fill(1);
+  const seams = ctx.seams;
+  F.seamAt = (x, y, z, eps = 0.06) => seams.some((fn) => Math.abs(fn(x, y, z)) < eps);
+  F.seamed = seams.length > 0;
   const spheres = nodes.map((entry) => entry.sphere);
   F.rayMask = (c, V) => {
     let t0 = BIG;
@@ -288,6 +320,7 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null }
     let best = BIG;
     let index = 0;
     const on = bits.v;
+    for (const face of faces) if ((!masked || on[face.index]) && Math.abs(face.plane(x, y, z)) < 0.08) return face.m;
     if (blends.size) nearest.fill(BIG);
     for (let i = 0; i < leaves.length; i++) {
       if (leaves[i].cutter || (masked && !on[leaves[i].index])) continue;
@@ -392,6 +425,69 @@ function simplify(points, tolerance) {
   return points.filter((_, i) => keep[i]);
 }
 
+function keepIndices(points, tolerance) {
+  const keep = new Uint8Array(points.length);
+  keep[0] = keep[points.length - 1] = 1;
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const [ax, ay] = points[a];
+    const [bx, by] = points[b];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const length = Math.hypot(dx, dy) || 1e-9;
+    let worst = -1;
+    let index = -1;
+    for (let i = a + 1; i < b; i++) {
+      const off = Math.abs((points[i][0] - ax) * dy - (points[i][1] - ay) * dx) / length;
+      if (off > worst) (worst = off), (index = i);
+    }
+    if (worst > tolerance) {
+      keep[index] = 1;
+      stack.push([a, index], [index, b]);
+    }
+  }
+  return keep;
+}
+
+export function fitRing(ring, tolerance) {
+  const n = ring.length;
+  if (n < 4) return curvePath(ring, true);
+  const loop = [...ring, ring[0]];
+  const keep = keepIndices(loop, tolerance / 3);
+  const index = [];
+  for (let i = 0; i < n; i++) if (keep[i]) index.push(i);
+  if (index.length < 3) return curvePath(simplifyRing(ring, tolerance), true);
+  const tangent = (i) => {
+    const a = ring[(i - 2 + n) % n];
+    const b = ring[(i + 2) % n];
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+  };
+  let cx = tenth(ring[index[0]][0]);
+  let cy = tenth(ring[index[0]][1]);
+  const parts = [`M${joinNumbers([numOf(cx), numOf(cy)])}c`];
+  const segs = [];
+  for (let k = 0; k < index.length; k++) {
+    const i = index[k];
+    const j = index[(k + 1) % index.length];
+    const p1 = ring[i];
+    const p2 = ring[j];
+    let span = 0;
+    for (let m = i; m !== j; m = (m + 1) % n) span += Math.hypot(ring[(m + 1) % n][0] - ring[m][0], ring[(m + 1) % n][1] - ring[m][1]);
+    const t1 = tangent(i);
+    const t2 = tangent(j);
+    const h = span / 3;
+    const values = [p1[0] + t1[0] * h, p1[1] + t1[1] * h, p2[0] - t2[0] * h, p2[1] - t2[1] * h, p2[0], p2[1]];
+    const out = [];
+    for (let v = 0; v < 6; v += 2) out.push(numOf(tenth(values[v]) - cx), numOf(tenth(values[v + 1]) - cy));
+    segs.push(joinNumbers(out));
+    cx = tenth(p2[0]);
+    cy = tenth(p2[1]);
+  }
+  return parts[0] + segs.join(" ") + "z";
+}
+
 function simplifyRing(ring, tolerance) {
   let far = 0;
   let best = -1;
@@ -476,7 +572,7 @@ function nearestOn(lines, p) {
   return best;
 }
 
-export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true } = {}) {
+export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null } = {}) {
   if (!F.bounds) throw new Error("blob.paint: the field has no bounds");
   const started = Date.now();
   const cam = basisOf(P);
@@ -499,7 +595,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     if (t === null) return { hit: false };
     const p = [c[0] + V[0] * t, c[1] + V[1] * t, c[2] + V[2] * t];
     const n = F.normal(p[0], p[1], p[2], true);
-    return { hit: true, t, n, score: dot3(n, L), mat: F.materials.length > 1 ? F.material(p[0], p[1], p[2], true) : 0 };
+    return { hit: true, t, n, p, score: dot3(n, L), mat: F.materials.length > 1 ? F.material(p[0], p[1], p[2], true) : 0 };
   };
   const grid = new Array(nx * ny).fill(null);
   const real = (i, j) => grid[j * nx + i] ?? (grid[j * nx + i] = probe(x0 + i * cell, y0 + j * cell));
@@ -586,7 +682,8 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
       const [first, second] = flags[j0 * nx + i0] ? [[i0, j0], [i1, j1]] : [[i1, j1], [i0, j0]];
       const hit = bisect(pos(...first), pos(...second), grid[first[1] * nx + first[0]], grid[second[1] * nx + second[0]], (r) => inside(r));
       points.set(id, hit.at);
-      kinds.set(id, !hit.b.hit ? "outline" : Math.abs(hit.a.t - hit.b.t) > jump ? "contour" : "seam");
+      const near = F.seamed && (hit.a.p ? hit.a : probe(hit.at[0], hit.at[1]));
+      kinds.set(id, near && near.p && F.seamAt(...near.p) ? "split" : !hit.b.hit ? "outline" : Math.abs(hit.a.t - hit.b.t) > jump ? "contour" : "seam");
     };
     const link = (a, b) => {
       crossing(a);
@@ -623,16 +720,33 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     }
     return kept;
   };
-  const ringsPath = (rings) => rings.map((ring) => curvePath(simplifyRing(ring.points, smooth), true)).join("");
+  const ringsPath = (rings, tolerance = smooth) => rings.map((ring) => fitRing(ring.points, tolerance)).join("");
   const outlineRings = region((r) => r.hit);
-  const outline = ringsPath(outlineRings);
+  const splitRun = (ring) => {
+    const n = ring.points.length;
+    const start = ring.kinds.findIndex((kind, i) => kind === "split" && ring.kinds[(i + 1) % n] !== "split");
+    const out = [];
+    let run = [];
+    for (let s = 1; s <= n; s++) {
+      const i = (start + s) % n;
+      if (ring.kinds[i] === "split") {
+        if (run.length > 1) out.push(run);
+        run = [];
+      } else run.push(ring.points[i]);
+    }
+    if (run.length > 1) out.push(run);
+    return out.map((pts) => curvePath(simplify(pts, Math.min(smooth, edge)), false)).join("");
+  };
+  const outline = outlineRings.map((ring) => (ring.kinds.includes("split") ? splitRun(ring) : fitRing(ring.points, Math.min(smooth, edge)))).join("");
+  const coverage = ringsPath(outlineRings, Math.min(smooth, edge));
+  const ground = base === null ? -1 : F.materials.indexOf(base);
   const layers = F.materials.map((mat, m) => {
-    const base = region((r) => r.hit && r.mat === m);
-    if (!base.length) return null;
-    const cover = ringsPath(base);
-    const bands = BANDS.map((level) => ringsPath(region((r) => r.hit && r.mat === m && r.score >= level)));
+    const own = m === ground ? outlineRings : region((r) => r.hit && r.mat === m);
+    if (!own.length) return null;
+    const cover = m === ground ? coverage : ringsPath(own);
+    const bands = tones === "overlay" ? ["", "", "", ""] : BANDS.map((level) => ringsPath(region((r) => r.hit && r.mat === m && r.score >= level)));
     const seams = [];
-    for (const ring of base) {
+    for (const ring of m === ground ? [] : own) {
       const n = ring.points.length;
       const start = ring.kinds.findIndex((kind, i) => kind !== "seam" && ring.kinds[(i + 1) % n] === "seam");
       if (start < 0) {
@@ -669,6 +783,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
         const near = (rm, qa, qb) => rm.hit && (!qb.hit || Math.abs(rm.t - qa.t) + angle(rm, qa) * 0.05 < Math.abs(rm.t - qb.t) + angle(rm, qb) * 0.05);
         const hit = bisect(pos(i, j), pos(i1, j1), a, b, near);
         if (!hit.b.hit || !hit.a.hit) continue;
+        if (F.seamed && ((hit.a.p && F.seamAt(...hit.a.p)) || (hit.b.p && F.seamAt(...hit.b.p)))) continue;
         const gap = Math.abs(hit.a.t - hit.b.t);
         const turn = angle(hit.a, hit.b);
         if (gap <= jump && turn <= crease) continue;
@@ -728,10 +843,48 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     }
   }
   const seams = withSeams ? layers.filter(Boolean).flatMap((layer) => layer.seams).filter((s) => lengthOf(s.points) > 1) : [];
-  return { layers: layers.filter(Boolean), outline, inner, seams, box, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };
+  const overlay = tones === "overlay" ? BANDS.map((level) => ringsPath(region((r) => r.hit && r.score >= level).filter((ring) => Math.abs(areaOf(ring.points)) >= 2), toneSmooth ?? smooth)) : null;
+  const kept = layers.filter(Boolean);
+  if (ground >= 0) kept.sort((a, b) => (b.mat === base) - (a.mat === base));
+  return { layers: kept, ground: ground >= 0, tones: overlay, outline, coverage, inner, seams, box, stats: { probes, grid: [nx, ny], ms: Date.now() - started } };
 }
 
 const attr = (name, value) => (value === undefined || value === null || value === false ? "" : value === true || value === "" ? ` ${name}` : ` ${name}="${value}"`);
+
+export function fadedLine(points, [start, end], tone = "lo", { steps = 3 } = {}) {
+  const lengths = [0];
+  for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
+  const total = lengths[lengths.length - 1];
+  if (total < 1e-6) return "";
+  if (start + end > total) {
+    const share = total / (start + end);
+    start *= share;
+    end *= share;
+  }
+  const at = (length) => {
+    let i = 1;
+    while (i < points.length - 1 && lengths[i] < length) i++;
+    const span = lengths[i] - lengths[i - 1] || 1;
+    const t = Math.max(0, Math.min(1, (length - lengths[i - 1]) / span));
+    return [points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t, points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t];
+  };
+  const piece = (from, to) => [at(from), ...points.filter((_, i) => lengths[i] > from + 1e-6 && lengths[i] < to - 1e-6), at(to)];
+  const out = [];
+  const ramp = (from, to, rising) => {
+    for (let k = 0; k < steps; k++) {
+      const a = from + ((to - from) * k) / steps;
+      const b = from + ((to - from) * (k + 1)) / steps;
+      const x = (k + 0.5) / steps;
+      const alpha = rising ? x * x * (3 - 2 * x) : 1 - x * x * (3 - 2 * x);
+      const free = rising ? (k === 0 ? ' data-free="start"' : "") : k === steps - 1 ? ' data-free="end"' : "";
+      out.push(`<path class="iso-line sp-fade" data-tone="${tone}" data-fade="${Math.max(1, Math.min(9, Math.round(alpha * 10)))}"${free} d="${curvePath(piece(a, b), false)}"/>`);
+    }
+  };
+  if (start > 0) ramp(0, start, true);
+  if (total - end > start) out.push(`<path class="iso-line" data-tone="${tone}" d="${curvePath(simplify(piece(start, total - end), 0.04), false)}"/>`);
+  if (end > 0) ramp(total - end, total, false);
+  return out.join("");
+}
 
 const TOKENS = ["--anatomy-shade-0", "--anatomy-shade-1", "--anatomy-shade-2", "--anatomy-shade-3", "--anatomy-top"];
 
@@ -750,12 +903,13 @@ export function fieldSvg(painted, { tone = "hi", tissue = {}, className, seamTon
     })
     .join("");
   const lines = painted.inner
-    .map((line) => (line.fade[0] || line.fade[1] ? fadeLineSvg(line.points, { fade: line.fade, tone: line.tone }) : `<path class="iso-line" data-tone="${line.tone}" d="${curvePath(line.points, false)}"/>`))
+    .map((line) => (line.fade[0] || line.fade[1] ? fadedLine(line.points, line.fade, line.tone) : `<path class="iso-line" data-tone="${line.tone}" d="${curvePath(line.points, false)}"/>`))
     .join("");
   const seams = painted.seams.map((seam) => `<path class="iso-line" data-tone="${seamTone}" d="${curvePath(simplify(seam.points, 0.05), false)}"/>`).join("");
+  const veils = painted.tones ? `<g class="sp-tones">${painted.tones.map((d, i) => (d ? `<path class="sp-tone" data-tone="${i + 1}" d="${d}"/>` : "")).join("")}</g>` : "";
   const first = painted.layers[0];
-  const under = painted.layers.length > 1 && first ? `<g class="iso-solid"${attr("data-tissue", tissue[first.mat] ?? first.mat)}><path class="iso-shade" data-shade="1" d="${painted.outline}"/></g>` : "";
-  return `<g class="sp-field${className ? ` ${className}` : ""}">${under}${layers}<g class="iso-solid">${seams}${lines}<path class="iso-line iso-edge" data-tone="${tone}" d="${painted.outline}"/></g></g>`;
+  const under = !painted.ground && painted.layers.length > 1 && first ? `<g class="iso-solid"${attr("data-tissue", tissue[first.mat] ?? first.mat)}><path class="iso-shade" data-shade="1" d="${painted.coverage}"/></g>` : "";
+  return `<g class="sp-field${className ? ` ${className}` : ""}">${under}${layers}${veils}<g class="iso-solid">${seams}${lines}<path class="iso-line iso-edge" data-tone="${tone}" d="${painted.outline}"/></g></g>`;
 }
 
 export function surfaceSamples(F, spacing = 0.6, { offset = [0, 0, 0] } = {}) {
@@ -796,4 +950,82 @@ export function surfaceSamples(F, spacing = 0.6, { offset = [0, 0, 0] } = {}) {
             }
       }
   return out;
+}
+
+function polylinesOf(d) {
+  if (/[^MLZ\d\s.,eE+-]/.test(d)) return null;
+  const out = [];
+  for (const [, kind, body] of d.matchAll(/([MLZ])([^MLZ]*)/g)) {
+    const v = (body.match(/-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) ?? []).map(Number);
+    if (kind === "M") out.push({ points: [[v[0], v[1]]], closed: false });
+    if (kind === "L") for (let i = 0; i + 1 < v.length; i += 2) out[out.length - 1].points.push([v[i], v[i + 1]]);
+    if (kind === "Z" && out.length) out[out.length - 1].closed = true;
+  }
+  return out;
+}
+
+export function compactPath(d, { tolerance = 0.15, corner = 28 } = {}) {
+  const lines = polylinesOf(d);
+  if (!lines) return d;
+  const cos = Math.cos((corner * Math.PI) / 180);
+  return lines
+    .map(({ points, closed }) => {
+      const pts = points.filter((p, i) => i === 0 || Math.hypot(p[0] - points[i - 1][0], p[1] - points[i - 1][1]) > 1e-6);
+      if (closed && pts.length > 1 && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < 1e-6) pts.pop();
+      if (pts.length < 3) return curvePath(pts, closed && pts.length > 2);
+      const n = pts.length;
+      const sharp = pts.map((p, i) => {
+        if (!closed && (i === 0 || i === n - 1)) return true;
+        const a = pts[(i - 1 + n) % n];
+        const b = pts[(i + 1) % n];
+        const u = [p[0] - a[0], p[1] - a[1]];
+        const w = [b[0] - p[0], b[1] - p[1]];
+        return (u[0] * w[0] + u[1] * w[1]) / (Math.hypot(...u) * Math.hypot(...w) || 1) < cos;
+      });
+      const corners = sharp.map((flag, i) => (flag ? i : -1)).filter((i) => i >= 0);
+      if (!corners.length) return curvePath(simplifyRing(pts, tolerance), true);
+      const runs = [];
+      for (let c = 0; c < corners.length - (closed ? 0 : 1); c++) {
+        const from = corners[c];
+        const to = corners[(c + 1) % corners.length];
+        const run = [];
+        for (let i = from; ; i = (i + 1) % n) {
+          run.push(pts[i]);
+          if (i === to && run.length > 1) break;
+          if (run.length > n + 1) break;
+        }
+        runs.push(simplify(run, tolerance));
+      }
+      let out = curvePath(runs[0], false);
+      for (const run of runs.slice(1)) out += curvePath(run, false).replace(/^M[^lc]*/, "");
+      return closed ? out.replace(/^M/, "M") + "z" : out;
+    })
+    .join("");
+}
+
+export const compactSvg = (svg, options) => svg.replace(/ d="([^"]*)"/g, (all, d) => ` d="${compactPath(d, options)}"`);
+
+export const FIELD_CSS = `.sp-tone{stroke:none;fill:var(--sp-glow,#fff)}
+.sp-fade{stroke-linecap:butt}
+${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `.sp-fade[data-fade="${n}"]{stroke-opacity:${n / 10}}`).join("\n")}
+.sp-tone[data-tone="1"]{fill-opacity:var(--sp-tone-1,.07)}
+.sp-tone[data-tone="2"]{fill-opacity:var(--sp-tone-2,.08)}
+.sp-tone[data-tone="3"]{fill-opacity:var(--sp-tone-3,.09)}
+.sp-tone[data-tone="4"]{fill-opacity:var(--sp-tone-4,.1)}
+.iso[data-theme="light"] .sp-tone[data-tone="1"]{fill-opacity:var(--sp-tone-1,.25)}
+.iso[data-theme="light"] .sp-tone[data-tone="2"]{fill-opacity:var(--sp-tone-2,.33)}
+.iso[data-theme="light"] .sp-tone[data-tone="3"]{fill-opacity:var(--sp-tone-3,.5)}
+.iso[data-theme="light"] .sp-tone[data-tone="4"]{fill-opacity:var(--sp-tone-4,.45)}
+`;
+
+export function split(root, seeds, { seam = true } = {}) {
+  return seeds.map((seed, i) => {
+    const walls = [];
+    seeds.forEach((other, j) => {
+      if (i === j) return;
+      const n = unit3(sub3(other, seed));
+      walls.push(halfspace(mul3(add3(seed, other), 0.5), n, { seam }));
+    });
+    return intersect(0, root, ...walls);
+  });
 }

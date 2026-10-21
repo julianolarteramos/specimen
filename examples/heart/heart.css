@@ -15,3 +15,5 @@
 .iso [data-tissue="oxy"]{--anatomy-shade-0:var(--tissue-oxy-0);--anatomy-shade-1:var(--tissue-oxy-1);--anatomy-shade-2:var(--tissue-oxy-2);--anatomy-shade-3:var(--tissue-oxy-3);--anatomy-top:var(--tissue-oxy-4)}
 .iso [data-tissue="deoxy"]{--anatomy-shade-0:var(--tissue-deoxy-0);--anatomy-shade-1:var(--tissue-deoxy-1);--anatomy-shade-2:var(--tissue-deoxy-2);--anatomy-shade-3:var(--tissue-deoxy-3);--anatomy-top:var(--tissue-deoxy-4)}
 .iso [data-tissue="coronary"]{--anatomy-shade-0:var(--tissue-coronary-0);--anatomy-shade-1:var(--tissue-coronary-1);--anatomy-shade-2:var(--tissue-coronary-2);--anatomy-shade-3:var(--tissue-coronary-3);--anatomy-top:var(--tissue-coronary-4)}
+.iso[data-theme="light"]{--sp-tone-1:.18;--sp-tone-2:.26;--sp-tone-3:.36;--sp-tone-4:.38}
+.iso{--sp-tone-1:.06;--sp-tone-2:.07;--sp-tone-3:.08;--sp-tone-4:.1}

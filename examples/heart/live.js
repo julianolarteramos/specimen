@@ -33,7 +33,7 @@ function draw() {
     const [cx, cy] = VIEWS[current].centre;
     heart.setAttribute("transform", beat.scale === 1 ? "" : `translate(${cx} ${cy}) scale(${beat.scale.toFixed(5)}) translate(${-cx} ${-cy})`);
   }
-  say(`${VIEWS[current].cut ? "four-chamber cut · " : ""}${Math.round(bpm)} bpm · ${beat.phase}`);
+  say(`${VIEWS[current].cut ? "four-chamber cut · " : VIEWS[current].veil ? "pericardium · " : ""}${Math.round(bpm)} bpm · ${beat.phase}`);
 }
 function tick(now) {
   const dt = last ? Math.min((now - last) / 1000, 1 / 20) : 1 / 60;

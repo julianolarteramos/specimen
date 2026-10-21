@@ -48,6 +48,8 @@ export const union = (...of) => ({ op: "union", of: of.flat(Infinity).filter(Boo
 
 export const carve = (base, cutter, k = 0, meta = {}) => ({ op: "carve", k, of: [base, cutter], ...meta });
 
+export const grow = (base, by) => ({ op: "grow", by, of: [base] });
+
 export const intersect = (k, ...of) => ({ op: "intersect", k, of: of.flat(Infinity).filter(Boolean) });
 
 export const halfspace = (o, n, meta = {}) => ({ op: "half", o, n: unit3(n), ...meta });
@@ -166,6 +168,12 @@ function compile(node, ctx, reach, cutter, parent) {
     if (node.mat) ctx.planes.push({ plane: cut.full, mat: node.mat, index });
     return done((x, y, z) => -smin(-base.full(x, y, z), cut.full(x, y, z), k), (x, y, z) => (bits.v[ci] ? -smin(-base.masked(x, y, z), cut.masked(x, y, z), k) : base.masked(x, y, z)), base.sphere);
   }
+  if (node.op === "grow") {
+    const by = node.by;
+    const base = compile(node.of[0], ctx, reach + Math.max(0, by), cutter, index);
+    const [c, r] = base.sphere;
+    return done((x, y, z) => base.full(x, y, z) - by, (x, y, z) => base.masked(x, y, z) - by, [c, r + Math.max(0, by)]);
+  }
   if (node.op === "intersect") {
     const k = node.k;
     const kids = node.of.map((child) => compile(child, ctx, reach + k, cutter, index));
@@ -214,7 +222,7 @@ function compile(node, ctx, reach, cutter, parent) {
   return done(leaf.fn, leaf.fn, leaf.sphere);
 }
 
-export function field(root, { L, steps = 600, mat = "tissue", name, mix = null } = {}) {
+export function field(root, { L, steps = 600, mat = "tissue", name, mix = null, cores = [] } = {}) {
   const node = typeof root === "function" ? custom(root, {}) : root;
   const bits = { v: null };
   const ctx = { leaves: [], nodes: [], bits, mat, planes: [], seams: [] };
@@ -231,6 +239,11 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null }
   const faces = ctx.planes.map((face) => {
     if (!materials.includes(face.mat)) materials.push(face.mat);
     return { ...face, m: materials.indexOf(face.mat) };
+  });
+  const inner = cores.map((core) => {
+    const fn = compile(core, { leaves: [], nodes: [], bits: { v: new Uint8Array(4096).fill(1) }, mat, planes: [], seams: [] }, 0, false, -1).full;
+    if (!materials.includes(core.mat)) materials.push(core.mat);
+    return { fn, m: materials.indexOf(core.mat) };
   });
   const matOf = leaves.map((leaf) => Math.max(0, materials.indexOf(leaf.mat)));
   const blends = new Map();
@@ -320,7 +333,11 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null }
     let best = BIG;
     let index = 0;
     const on = bits.v;
-    for (const face of faces) if ((!masked || on[face.index]) && Math.abs(face.plane(x, y, z)) < 0.08) return face.m;
+    for (const face of faces)
+      if ((!masked || on[face.index]) && Math.abs(face.plane(x, y, z)) < 0.08) {
+        for (const core of inner) if (core.fn(x, y, z) < 0) return core.m;
+        return face.m;
+      }
     if (blends.size) nearest.fill(BIG);
     for (let i = 0; i < leaves.length; i++) {
       if (leaves[i].cutter || (masked && !on[leaves[i].index])) continue;
@@ -572,7 +589,7 @@ function nearestOn(lines, p) {
   return best;
 }
 
-export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null, banded = [] } = {}) {
+export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, light, jump = 1.2, crease = 55, refine = 7, smooth = 0.2, fade = 7, least = 0.15, seams: withSeams = true, edge = 0.2, tones = "layers", toneSmooth, base = null, banded = [], quiet = banded } = {}) {
   if (!F.bounds) throw new Error("blob.paint: the field has no bounds");
   const started = Date.now();
   const cam = basisOf(P);
@@ -787,7 +804,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
         const gap = Math.abs(hit.a.t - hit.b.t);
         const turn = angle(hit.a, hit.b);
         if (gap <= jump && turn <= crease) continue;
-        if (gap <= jump && banded.some((mat) => F.materials.indexOf(mat) === hit.a.mat || F.materials.indexOf(mat) === hit.b.mat)) continue;
+        if (gap <= jump && quiet.some((mat) => F.materials.indexOf(mat) === hit.a.mat || F.materials.indexOf(mat) === hit.b.mat)) continue;
         flagged.set(((j * nx + i) * 2) | dir, { at: hit.at, kind: gap > jump ? "contour" : "crease" });
       }
   const links = new Map();
@@ -886,6 +903,11 @@ export function fadedLine(points, [start, end], tone = "lo", { steps = 3 } = {})
   if (total - end > start) out.push(`<path class="iso-line" data-tone="${tone}" d="${curvePath(simplify(piece(start, total - end), 0.04), false)}"/>`);
   if (end > 0) ramp(total - end, total, false);
   return out.join("");
+}
+
+export function veilSvg(painted, { tissue = "veil", tone = "mid", className } = {}) {
+  const shine = painted.tones ? painted.tones[3] : "";
+  return `<g class="sp-veil${className ? ` ${className}` : ""}"${attr("data-tissue", tissue)}><path class="sp-veil-fill" d="${painted.coverage}"/>${shine ? `<path class="sp-veil-shine" d="${shine}"/>` : ""}<g class="iso-solid"><path class="iso-line iso-edge" data-tone="${tone}" d="${painted.outline}"/></g></g>`;
 }
 
 const TOKENS = ["--anatomy-shade-0", "--anatomy-shade-1", "--anatomy-shade-2", "--anatomy-shade-3", "--anatomy-top"];
@@ -1008,6 +1030,8 @@ export function compactPath(d, { tolerance = 0.15, corner = 28 } = {}) {
 export const compactSvg = (svg, options) => svg.replace(/ d="([^"]*)"/g, (all, d) => ` d="${compactPath(d, options)}"`);
 
 export const FIELD_CSS = `.sp-tone{stroke:none;fill:var(--sp-glow,#fff)}
+.sp-veil-fill{stroke:none;fill:var(--anatomy-shade-2);fill-opacity:var(--sp-veil,.32)}
+.sp-veil-shine{stroke:none;fill:var(--sp-glow,#fff);fill-opacity:var(--sp-veil-shine,.22)}
 .sp-fade{stroke-linecap:butt}
 ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `.sp-fade[data-fade="${n}"]{stroke-opacity:${n / 10}}`).join("\n")}
 .sp-tone[data-tone="1"]{fill-opacity:var(--sp-tone-1,.07)}

@@ -9,7 +9,7 @@ import * as B from "../../kit/blob.mjs";
 import * as A from "../../kit/audit.mjs";
 import { kitScript } from "../../scripts/inline-kit.mjs";
 import * as M from "./model.mjs";
-import { HEART, HEART_CUT, W, PLINTH, POST, POST_TOP } from "./geometry.mjs";
+import { HEART, HEART_CUT, PERICARDIUM, VEIL_OPACITY, W, PLINTH, POST, POST_TOP } from "./geometry.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SELF = fileURLToPath(import.meta.url);
@@ -23,14 +23,15 @@ const started = Date.now();
 
 const WIDTH = 560;
 const HEIGHT = 620;
-export const VIEWS = ["15", "45", "75", "105", "cut"];
+export const VIEWS = ["15", "45", "75", "105", "cut", "veil"];
 const DEFAULT = VIEWS.indexOf("15");
 const CELL = quick ? 0.7 : 0.4;
-const TISSUE = { muscle: "muscle", oxy: "oxy", deoxy: "deoxy", coronary: "coronary", cut: "cut", valve: "valve" };
+const TISSUE = { muscle: "muscle", oxy: "oxy", deoxy: "deoxy", coronary: "coronary", cut: "cut", valve: "valve", endo: "endo" };
 
 function view(spec) {
   const cut = spec === "cut";
-  const azimuth = cut ? 15 : Number(spec);
+  const veil = spec === "veil";
+  const azimuth = cut || veil ? 15 : Number(spec);
   const FIELD = cut ? HEART_CUT : HEART;
   const t0 = Date.now();
   const box = [...k.boxCorners({ x: -PLINTH.r, y: -PLINTH.r, w: 2 * PLINTH.r, d: 2 * PLINTH.r, r: 0 }, 0, PLINTH.h), HEART.bounds.min, HEART.bounds.max, [HEART.bounds.min[0], HEART.bounds.max[1], HEART.bounds.max[2]], [HEART.bounds.max[0], HEART.bounds.min[1], HEART.bounds.max[2]]];
@@ -52,14 +53,18 @@ function view(spec) {
   const postFrame = G.frameOf([px, py, top + 3.6], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
   const length = POST_TOP - top - 3.6;
   R.put({ name: "stand.post", at: [px, py, top + 3.6 + length / 3], svg: k.solidSvg(G.disc(0, length, POST.r, postFrame, P), { tone: "mid" }), shapes: [R.solid(A.disc(postFrame, 0, length, POST.r, { name: "stand.post", blend: ["heart"] }))] });
-  const painted = B.paint(FIELD, P, { cell: CELL, coarse: quick ? 3 : 2, seams: false, smooth: 0.5, toneSmooth: 0.5, jump: 3.5, tones: "overlay", base: "muscle", banded: ["coronary", "cut", "valve"] });
+  const painted = B.paint(FIELD, P, { cell: CELL, coarse: quick ? 3 : 2, seams: false, smooth: 0.5, toneSmooth: 0.5, jump: 3.5, tones: "overlay", base: "muscle", banded: ["coronary", "cut", "valve", "endo"], quiet: ["coronary", "valve"] });
   const centre = at(W([6, 0, 0]));
   R.put({ name: "heart", at: W([4, 0, 10]), svg: `<g data-part="heart" data-cx="${centre[0].toFixed(2)}" data-cy="${centre[1].toFixed(2)}">${B.fieldSvg(painted, { tone: "hi", tissue: TISSUE })}</g>`, shapes: [R.solid(A.field(FIELD, { name: "heart" }))] });
+  if (veil) {
+    const sac = B.paint(PERICARDIUM, P, { cell: CELL, coarse: quick ? 3 : 2, tones: "overlay", jump: 99 });
+    R.put({ name: "pericardium", at: W([4, 0, 10]), bias: 1e4, veil: { opacity: VEIL_OPACITY }, svg: `<g data-part="veil">${B.veilSvg(sac, { tissue: "veil" })}</g>`, shapes: [R.solid(A.field(PERICARDIUM, { name: "pericardium" }))] });
+  }
   A.settle(R, P);
   R.items.sort((a, b) => a.key - b.key);
   const body = R.items.map((item) => item.svg).join("");
-  const svg = B.compactSvg(k.figureSvg({ width: WIDTH, height: HEIGHT, label: cut ? "The same heart model opened along the four-chamber plane: the cut face shows the walls of both atria and both ventricles, the septum between them, the mitral and tricuspid valve leaflets with their papillary muscles, and the lumens of the cut great vessels." : `Classroom model of a human heart on a turned plinth, seen from the front, turned ${azimuth - 15} degrees: ventricles with the apex to the model's left, both atria and auricles, the aortic arch with its three branches, the pulmonary trunk splitting in two, the venae cavae and the coronary arteries on the surface.`, body, className: "hr-view" }), { tolerance: 0.3 });
-  return { spec, azimuth, cut, P, R, svg, centre, painted, ms: Date.now() - t0 };
+  const svg = B.compactSvg(k.figureSvg({ width: WIDTH, height: HEIGHT, label: veil ? "The same heart model seen inside its pericardium, a translucent sac that wraps the chambers and opens where the great vessels leave." : cut ? "The same heart model opened along the four-chamber plane: the cut face shows the walls of both atria and both ventricles, the septum between them, the mitral and tricuspid valve leaflets with their papillary muscles, and the lumens of the cut great vessels." : `Classroom model of a human heart on a turned plinth, seen from the front, turned ${azimuth - 15} degrees: ventricles with the apex to the model's left, both atria and auricles, the aortic arch with its three branches, the pulmonary trunk splitting in two, the venae cavae and the coronary arteries on the surface.`, body, className: "hr-view" }), { tolerance: 0.3 });
+  return { spec, azimuth, cut, veil, P, R, svg, centre, painted, ms: Date.now() - t0 };
 }
 
 
@@ -73,7 +78,7 @@ if (child) {
     failed = A.failures(result);
     report = A.report(result);
   }
-  writeFileSync(out, JSON.stringify({ spec: v.spec, cut: v.cut, azimuth: v.azimuth, svg: v.svg, centre: v.centre, items: v.R.items.length, rays: v.painted.stats.probes, ms: v.ms, report, failed }));
+  writeFileSync(out, JSON.stringify({ spec: v.spec, cut: v.cut, veil: v.veil, azimuth: v.azimuth, svg: v.svg, centre: v.centre, items: v.R.items.length, rays: v.painted.stats.probes, ms: v.ms, report, failed }));
 } else {
   await main();
 }
@@ -106,12 +111,12 @@ async function main() {
   }
   const live = readFileSync(join(HERE, "live.js"), "utf8")
     .replace("__MODEL__", readFileSync(join(HERE, "model.mjs"), "utf8").replace(/^export /gm, ""))
-    .replace("__VIEWS__", JSON.stringify(views.map((v) => ({ azimuth: v.azimuth, cut: v.cut, centre: v.centre }))))
+    .replace("__VIEWS__", JSON.stringify(views.map((v) => ({ azimuth: v.azimuth, cut: v.cut, veil: v.veil, centre: v.centre }))))
     .replace("__DEFAULT__", String(only ? 0 : DEFAULT));
   const css = readFileSync(join(HERE, "heart.css"), "utf8");
   const first = only ? 0 : DEFAULT;
   const stack = views.map((v, index) => v.svg.replace("<svg ", `<svg data-view="${index}"${index === first ? " data-on" : ""} aria-hidden="${index === first ? "false" : "true"}" `)).join("");
-  const dots = views.map((v, index) => `<button type="button" class="hr-dot" data-go="${index}"${index === first ? ' aria-current="true"' : ""} ${v.cut ? " data-cut" : ""} aria-label="${v.cut ? "Four-chamber cut" : `View from ${v.azimuth}°`}"></button>`).join("");
+  const dots = views.map((v, index) => `<button type="button" class="hr-dot" data-go="${index}"${index === first ? ' aria-current="true"' : ""} ${v.cut || v.veil ? " data-cut" : ""} aria-label="${v.cut ? "Four-chamber cut" : v.veil ? "Inside the pericardium" : `View from ${v.azimuth}°`}"></button>`).join("");
   const body = `<style>${B.FIELD_CSS}${css}</style>` + k.plateHtml({
     fig: "Fig 1",
     title: "Heart",
@@ -119,7 +124,7 @@ async function main() {
     readout: `${M.REST_BPM} bpm · diastole`,
     keys: [
       { mark: "lit", label: "Coronary arteries: the heart's own blood supply" },
-      { mark: "flat", label: "Last view: the model opened along the four-chamber plane, with the septum, the mitral and tricuspid leaflets and their papillary muscles" },
+      { mark: "flat", label: "Square views: the model opened along the four-chamber plane (septum, mitral and tricuspid leaflets, papillary muscles), then seen through its pericardium" },
       { mark: "raised", label: "Aorta and pulmonary veins carry oxygenated blood; the venae cavae and pulmonary trunk carry it back" },
     ],
     caption: "A classroom heart model on a turned plinth. The apex points down and to the model's left; the aorta arches back over the split of the pulmonary trunk and gives off the brachiocephalic trunk, the left common carotid and the left subclavian arteries. It beats at the rate in the readout: the ventricles squeeze for about a third of each cycle (systole) and the atria add a small kick just before.",

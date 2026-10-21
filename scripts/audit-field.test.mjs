@@ -81,3 +81,21 @@ test("a moved field keeps its distances and depth", () => {
   assert.ok(Math.abs(A.sdf(there, [10, 0, 7]) - 2) < 1e-9);
   assert.deepEqual(A.boundsOf(there).min.map((v) => Math.round(v)), [5, -5, -5]);
 });
+
+test("a veil is left out of depth order and cover, and must declare a readable opacity", () => {
+  const R = A.recorder(P);
+  const heart = B.field(B.ball([0, 0, 12], 10));
+  const sac = B.field(B.grow(B.ball([0, 0, 12], 10), 3));
+  R.put({ name: "heart", at: [0, 0, 12], svg: B.fieldSvg(B.paint(heart, P, { cell: 0.8 })), shapes: [R.solid(A.field(heart, { name: "heart" }))] });
+  R.put({ name: "sac", at: [0, 0, 12], bias: 1e4, veil: { opacity: 0.3 }, svg: B.veilSvg(B.paint(sac, P, { cell: 0.8, tones: "overlay" })), shapes: [R.solid(A.field(sac, { name: "sac" }))] });
+  A.settle(R, P);
+  const result = A.audit(R, P, { organic: true });
+  assert.equal(result.depth.problems.length, 0);
+  assert.equal(result.cover.length, 0);
+  assert.equal(result.supports.sunk.length, 0);
+  assert.equal(result.veiled.length, 0);
+  R.items[1].veil = { opacity: 0.9 };
+  assert.equal(A.veils(R.items).length, 1);
+  R.items[1].veil = true;
+  assert.match(A.report({ veiled: A.veils(R.items) }), /veils: 1 veil too opaque/);
+});

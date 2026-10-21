@@ -130,24 +130,38 @@ export const POST_TOP = postTop() + 5;
 const CUT_N = G.unit3([0.45, 0.6, 0.62]);
 export const CUT = { o: W(G.mul3(CUT_N, 3.4)), n: Wd(CUT_N) };
 const valve = { mat: "valve" };
-const cavity = (c, r, axes) => B.ellipsoid(W(c), r, { axes });
+const onCut = (c) => G.sub3(c, G.mul3(CUT_N, G.dot3(c, CUT_N) - 3.4));
 const LV_AXES = along(BASE_C, APEX, [1, 0, 0]);
 const RV_AXES = along([-14, 16, 14], [18, 26, -36], [1, -0.4, 0]);
-const CAVITIES = B.blend(3,
-  cavity([17, 0, -6], [29, 14, 10], LV_AXES),
-  cavity([-6, 21, -2], [26, 16, 5.5], RV_AXES),
-  cavity([-34, 0, 24], [13, 12, 18], AXES),
-  cavity([6, -26, 30], [20, 10, 10], AXES),
-  B.capsule(W([6, -24, 27]), W([12, -6, 12]), 6.5, 6.5),
-  B.capsule(W([-30, 4, 19]), W([-14, 16, 6]), 6, 6),
-);
+const LV_CAVITY = B.ellipsoid(W(onCut([17, 2, -6])), [30, 16, 13], { axes: LV_AXES });
+const RV_CAVITY = B.carve(B.ellipsoid(W(onCut([-8, 19, -1])), [29, 20, 10], { axes: RV_AXES }), B.ellipsoid(W([16, 0, -10]), [41, 26.5, 24.5], { axes: LV_AXES }), 2);
+const RA_CAVITY = B.ellipsoid(W(onCut([-34, 0, 24])), [14, 13, 19], { axes: AXES });
+const LA_CAVITY = B.ellipsoid(W(onCut([6, -24, 30])), [21, 11, 11], { axes: AXES });
+const MITRAL = [onCut([10, -12, 21]), onCut([13, -4, 13])];
+const TRICUSPID = [onCut([-26, 7, 15]), onCut([-17, 13, 8])];
+const CAVITIES = B.blend(2.5, LV_CAVITY, RV_CAVITY, RA_CAVITY, LA_CAVITY, B.capsule(W(MITRAL[0]), W(MITRAL[1]), 8, 8), B.capsule(W(TRICUSPID[0]), W(TRICUSPID[1]), 7, 7));
+const leaflet = (root, tip, width) => {
+  const axes = along(root, tip, CUT_N);
+  return B.ellipsoid(W(G.lerp3(root, tip, 0.5)), [G.len3(G.sub3(tip, root)) / 2 + 1, width, 1.6], { axes: [axes[0], axes[1]], ...valve });
+};
+const papilla = (base, tip, r) => B.capsule(W(base), W(tip), r, r * 0.45, muscle);
 const LEAFLETS = [
-  [[7, -12, 17], [15, -1, 1], [24, 4, -22]],
-  [[14, -9, 19], [21, 1, 3], [27, 3, -20]],
-  [[-24, 8, 13], [-14, 19, 0], [-6, 24, -14]],
-  [[-19, 13, 15], [-9, 22, 2], [-2, 25, -12]],
-].map(([root, tip, papilla]) => B.blend(0.8, B.capsule(W(root), W(tip), 2.4, 0.9, valve), B.capsule(W(tip), W(G.lerp3(tip, papilla, 0.7)), 0.35, 0.35, valve), B.capsule(W(G.lerp3(tip, papilla, 0.7)), W(papilla), 1.2, 3.2, muscle)));
-const SHELL = B.blend(0.7, B.blend(3, B.blend(2.5, B.carve(BODY, CAVITIES, 1.5), ...AURICLES), ...VESSELS), ...CORONARIES);
-export const CUT_TOP = LIFT + 48;
-const REMOVE = B.intersect(0, B.halfspace(CUT.o, G.mul3(CUT.n, -1)), B.halfspace([0, 0, CUT_TOP], [0, 0, 1]));
-export const HEART_CUT = B.field(B.carve(B.union(SHELL, ...LEAFLETS), REMOVE, 0.25, { mat: "cut" }), { name: "heart.cut", mix: MIX });
+  leaflet(onCut([6, -10, 18]), onCut([12, 0, 4]), 4.5),
+  leaflet(onCut([15, -8, 19]), onCut([19, 2, 6]), 4.5),
+  leaflet(onCut([-29, 8, 12]), onCut([-20, 15, 2]), 4),
+  leaflet(onCut([-22, 13, 14]), onCut([-14, 19, 4]), 4),
+];
+const VALVES = [
+  ...LEAFLETS,
+  papilla(onCut([26, 8, -24]), onCut([20, 4, -8]), 4.5),
+  papilla(onCut([4, 26, -14]), onCut([-4, 22, -2]), 3),
+];
+const ENDO = B.blend(2, ...[LV_CAVITY, RA_CAVITY, LA_CAVITY].map((node) => ({ ...node, r: node.r.map((v) => v + 2.2) })), B.ellipsoid(W(onCut([-8, 19, -1])), [31.2, 22.2, 12.2], { axes: RV_AXES }));
+ENDO.mat = "endo";
+const SHELL = B.blend(3, B.blend(2.5, B.carve(BODY, CAVITIES, 1.5), ...AURICLES), ...VESSELS);
+export const CUT_TOP = LIFT + 40;
+const REMOVE = B.intersect(3, B.halfspace(CUT.o, G.mul3(CUT.n, -1)), B.halfspace([0, 0, CUT_TOP], [0, 0, 1]));
+export const HEART_CUT = B.field(B.carve(B.blend(1.2, SHELL, ...VALVES), REMOVE, 0.25, { mat: "cut" }), { name: "heart.cut", mix: MIX, cores: [{ ...B.union(...LEAFLETS), mat: "valve" }, ENDO] });
+
+export const VEIL_OPACITY = 0.32;
+export const PERICARDIUM = B.field(B.clip(B.grow(B.blend(6, BODY, ...AURICLES), 3.5), [0, 0, LIFT + 46], [0, 0, 1], 1.5), { name: "pericardium" });

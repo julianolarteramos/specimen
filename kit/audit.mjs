@@ -626,7 +626,7 @@ function measure(ra, rb, dx, dy, dz, cam, step, tolerance, least) {
 
 export function overlapsOf(items, P, { step = 0.25, tolerance = 0.3, least = 0.25, states = [0], skip = () => false } = {}) {
   const cam = cameraBasis(P);
-  const live = items.map((item, index) => ({ item, index })).filter(({ item }) => item.shapes && item.shapes.length);
+  const live = items.map((item, index) => ({ item, index })).filter(({ item }) => item.shapes && item.shapes.length && !item.veil);
   const homes = live.map(() => null);
   let uid = 0;
   const stamp = (raster) => Object.assign(raster, { uid: uid++ });
@@ -1174,7 +1174,7 @@ export function supports(solids, tubes, { ground = grounded, touch = 0.15, sunk 
       for (const p of surfaces[b]) gap = Math.min(gap, sdf(nodes[a], p));
       if (gap <= touch) links[a].push(b), links[b].push(a);
       const solidPair = nodes[a].kind !== "tube" && nodes[b].kind !== "tube";
-      if (solidPair && !same && gap < -sunk && !seatedOn(nodes[a], nodes[b]) && !seatedOn(nodes[b], nodes[a]) && !blended(nodes[a], nodes[b])) deep.push({ a: nodes[a].name, b: nodes[b].name, depth: -gap });
+      if (solidPair && !same && gap < -sunk && !seatedOn(nodes[a], nodes[b]) && !seatedOn(nodes[b], nodes[a]) && !blended(nodes[a], nodes[b]) && !nodes[a].veil && !nodes[b].veil) deep.push({ a: nodes[a].name, b: nodes[b].name, depth: -gap });
     }
   }
   const held = new Uint8Array(nodes.length);
@@ -1629,7 +1629,7 @@ export function coverage(items, P, { least = 0.6, pad = 1, allow = [] } = {}) {
   const cam = cameraBasis(P);
   const out = [];
   for (const item of items) {
-    if (typeof item.svg !== "string" || !item.shapes || !item.shapes.length || matches(allow, item.name)) continue;
+    if (typeof item.svg !== "string" || !item.shapes || !item.shapes.length || item.veil || matches(allow, item.name)) continue;
     const drawn = markupBox(item.svg);
     if (!drawn) continue;
     const grow = (box) => [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
@@ -1847,7 +1847,15 @@ export function lipschitz(solids, { samples = 400, slack = 0.05, h = 1e-3 } = {}
   return out;
 }
 
-export function report({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends, folds: bends, supports: held, loose, apart, flight, crowding: crowded, self, wobble: wobbly, seats: seated, cover: covered, unbounded, steep } = {}, { limit = 4000 } = {}) {
+export function veils(items, { most = 0.55, least = 0.08 } = {}) {
+  return items
+    .filter((item) => item.veil)
+    .map((item) => ({ name: item.name, opacity: typeof item.veil === "object" ? item.veil.opacity : undefined }))
+    .filter((v) => !(v.opacity >= least && v.opacity <= most))
+    .map((v) => ({ ...v, most, least }));
+}
+
+export function report({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends, folds: bends, supports: held, loose, apart, flight, crowding: crowded, self, wobble: wobbly, seats: seated, cover: covered, unbounded, steep, veiled } = {}, { limit = 4000 } = {}) {
   const lines = [];
   const f = (v) => (Math.round(v * 100) / 100).toFixed(2);
   const p3 = (p) => `[${p.map((v) => v.toFixed(1)).join(", ")}]`;
@@ -1898,6 +1906,10 @@ export function report({ clearance = [], depth = { problems: [], missing: [] }, 
     lines.push(`saddles off their host apart: ${seated.length}`);
     for (const d of seated.slice(0, limit)) lines.push(`  ${d.name} (${d.piece}) is cut to ${d.host} (${d.hostPiece}); apart, its cut base is on show`);
   }
+  if (veiled) {
+    lines.push(`veils: ${veiled.length} veil${veiled.length === 1 ? "" : "s"} too opaque or too faint to read through`);
+    for (const v of veiled.slice(0, limit)) lines.push(`  ${v.name}  opacity ${v.opacity === undefined ? "undeclared" : f(v.opacity)}, keep it between ${f(v.least)} and ${f(v.most)} and declare it: veil: { opacity }`);
+  }
   if (unbounded) {
     lines.push(`fields without bounds: ${unbounded.length}`);
     for (const c of unbounded.slice(0, limit)) lines.push(`  ${c.name}  has no finite bounds: give the field primitives or pass bounds`);
@@ -1928,8 +1940,8 @@ export function report({ clearance = [], depth = { problems: [], missing: [] }, 
   return lines.join("\n");
 }
 
-export const failures = ({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends = [], folds: bends = [], supports: held = { loose: [], sunk: [] }, loose = [], apart = [], flight = [], crowding: crowded = [], self = [], wobble: wobbly = [], seats: seated = [], cover: covered = [], unbounded = [], steep = [] }) =>
-  unbounded.length + steep.length + covered.length + clearance.length + apart.length + flight.length + crowded.length + ends.length + loose.filter((e) => !e.free).length + bends.length + held.loose.length + (held.hanging ?? []).length + held.sunk.length + depth.problems.length + depth.missing.length + self.length + wobbly.length + seated.length;
+export const failures = ({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends = [], folds: bends = [], supports: held = { loose: [], sunk: [] }, loose = [], apart = [], flight = [], crowding: crowded = [], self = [], wobble: wobbly = [], seats: seated = [], cover: covered = [], unbounded = [], steep = [], veiled = [] }) =>
+  veiled.length + unbounded.length + steep.length + covered.length + clearance.length + apart.length + flight.length + crowded.length + ends.length + loose.filter((e) => !e.free).length + bends.length + held.loose.length + (held.hanging ?? []).length + held.sunk.length + depth.problems.length + depth.missing.length + self.length + wobbly.length + seated.length;
 
 export const sameRun = (a, b) => Boolean(a.route) && a.route === b.route && Math.abs(a.chunk - b.chunk) <= 1;
 
@@ -1948,7 +1960,7 @@ export function recorder(P, { order = [], spring = {}, ground = grounded } = {})
   };
   R.put = ({ at = null, bias = 0, key, name, piece = "", move = [0, 0, 0], ride, shapes = [], ...rest } = {}) => {
     const item = { ...rest, piece, ride: ride ?? piece, key: key ?? (at ? dot3(at, V) : 0) + bias, move, shapes, name: name ?? R.nameFor(`${piece || "item"}.item`) };
-    for (const shape of shapes) (shape.move = item.move), (shape.ride = item.ride), (shape.piece = piece);
+    for (const shape of shapes) (shape.move = item.move), (shape.ride = item.ride), (shape.piece = piece), item.veil && (shape.veil = true);
     R.items.push(item);
     return item;
   };
@@ -2016,6 +2028,7 @@ export function audit(R, P = R.P, { allow = [], crowd = [], cover = [], ground =
     supports: supports(R.solids, R.tubes, { ground }),
     depth: depthOrder(items, P, { overlaps, solved, allow }),
     unbounded: fieldBounds(R.solids),
+    veiled: veils(R.items),
     steep: lipschitz(R.solids),
   };
 }

@@ -74,7 +74,7 @@ Every open subpath of every `.iso-line` in the card (seams, grooves, ribs from `
 
 | You see | Fix |
 |---|---|
-| A seam or weld line on a box inset from the corners | `k.sideSeam(plan, z, P, steps)` as the slab's `inner`: it wraps the corners and ends on the silhouette (`craft.md`, section 3). |
+| A seam or weld line on a box inset from the corners | `k.sideSeam(plan, z, P, steps)` as the slab's `inner`: it wraps the corners and ends on the silhouette (`craft.md`, section II.3). |
 | A stiffener or panel line on one face, inset at both ends | Run it edge to edge: from the face's bottom to its top, or from end to end. |
 | Ribs that stop short of their seams | `ribsOf(…, { seams: true })`, or `s0`, `s1` on the band's ends. |
 | Ticks floating on a bare plate or hanging below an edge | Put them on a ruler strip, rooted on its edge (`topTicks` `edge`, `sideTicks` `top` on the face's top edge). |
@@ -115,7 +115,7 @@ It prints `audit passed` or `audit failed: n problems` and exits non-zero on any
 | `clearance apart: through share 1 …` | In the apart state a tube passes through something. | Change that assembly's explode vector. |
 | `terminals: A end 1.40 from B (rim -1.1…1.3)` | A's end, or the rim of its end flange, doesn't sit on its mount: it floats, it is tilted, or the flange is wider than the boss under it. | End the route exactly on the surface, along the surface normal; make the boss at least as wide as the flange; on a curved body seat the flange on a saddle pad. A cable never ends on a clamp. |
 | `loose ends: share 1 A end touches nothing that moves with it` | Apart, the end hangs in the air: nothing of another owner moves with it (its own flange or shell doesn't count). | Give it a mount that moves with it, or, if it is meant to come off (a flanged duct, a connector on another assembly), mark it `free` so it is listed under "free ends" as a choice. |
-| `self-overlap: A:3 its outline folds back on screen` | One chunk's outline crosses itself: the line turns on a screen radius under its own half-width (a leg pointing at the viewer that turns near a port). | Leave the port through an elbow ball (the Raptor's `elbow`), give the turn more straight leg, or bend in a plane that faces the viewer (the Raptor's `sideOn`, `craft.md`, section 8). |
+| `self-overlap: A:3 its outline folds back on screen` | One chunk's outline crosses itself: the line turns on a screen radius under its own half-width (a leg pointing at the viewer that turns near a port). | Leave the port through an elbow ball (the Raptor's `elbow`), give the turn more straight leg, or bend in a plane that faces the viewer (the Raptor's `sideOn`, `craft.md`, section II.8). |
 | `wobble: A dr/ds turns at s = …` | A profile smoothed from typed knots has a slope that plateaus and reverses, so its tone bands staircase. | Give it an analytic `r(s)` and pass `smooth: { slope }`. |
 | `saddles off their host apart: A (piece) is cut to B (host piece)` | A saddle pad flies off with another assembly, showing its cut base. | Give the pad to the host's assembly; the moving pipe leaves its flat face. |
 | `solid  state  A × B  sunk 1.81 deep` | Two solids of different assemblies pass through each other in that frame. | As for a tube: fix the order or the vectors, or open the gap under an overhang. |

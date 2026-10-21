@@ -140,26 +140,33 @@ const LA_CAVITY = B.ellipsoid(W(onCut([6, -24, 30])), [21, 11, 11], { axes: AXES
 const MITRAL = [onCut([10, -12, 21]), onCut([13, -4, 13])];
 const TRICUSPID = [onCut([-26, 7, 15]), onCut([-17, 13, 8])];
 const CAVITIES = B.blend(2.5, LV_CAVITY, RV_CAVITY, RA_CAVITY, LA_CAVITY, B.capsule(W(MITRAL[0]), W(MITRAL[1]), 8, 8), B.capsule(W(TRICUSPID[0]), W(TRICUSPID[1]), 7, 7));
-const leaflet = (root, tip, width) => {
+const leaflet = (root, tip) => {
   const axes = along(root, tip, CUT_N);
-  return B.ellipsoid(W(G.lerp3(root, tip, 0.5)), [G.len3(G.sub3(tip, root)) / 2 + 1, width, 1.6], { axes: [axes[0], axes[1]], ...valve });
+  return B.ellipsoid(W(G.lerp3(root, tip, 0.5)), [G.len3(G.sub3(tip, root)) / 2 + 1.2, 6, 1.7], { axes: [axes[0], axes[1]], ...valve });
 };
-const papilla = (base, tip, r) => B.capsule(W(base), W(tip), r, r * 0.45, muscle);
-const LEAFLETS = [
-  leaflet(onCut([6, -10, 18]), onCut([12, 0, 4]), 4.5),
-  leaflet(onCut([15, -8, 19]), onCut([19, 2, 6]), 4.5),
-  leaflet(onCut([-29, 8, 12]), onCut([-20, 15, 2]), 4),
-  leaflet(onCut([-22, 13, 14]), onCut([-14, 19, 4]), 4),
-];
-const VALVES = [
-  ...LEAFLETS,
-  papilla(onCut([26, 8, -24]), onCut([20, 4, -8]), 4.5),
-  papilla(onCut([4, 26, -14]), onCut([-4, 22, -2]), 3),
-];
+const valveSet = (ring, axis, width, length, reach) => {
+  const d = G.unit3(axis);
+  const u = G.unit3(G.cross3(CUT_N, d));
+  const leaves = [];
+  const parts = [];
+  for (const side of [-1, 1]) {
+    const root = onCut(G.add3(ring, G.mul3(u, side * width)));
+    const tip = onCut(G.add3(G.add3(root, G.mul3(d, length)), G.mul3(u, -side * width * 0.35)));
+    const papillaTip = onCut(G.add3(G.add3(ring, G.mul3(d, reach)), G.mul3(u, side * width * 0.9)));
+    const papillaBase = onCut(G.add3(G.add3(ring, G.mul3(d, reach + 12)), G.mul3(u, side * width * 1.35)));
+    leaves.push(leaflet(root, tip));
+    parts.push(B.capsule(W(tip), W(papillaTip), 0.45, 0.45, valve), B.capsule(W(papillaTip), W(papillaBase), 1.6, 4.2, muscle));
+  }
+  return { leaves, parts };
+};
+const MITRAL_SET = valveSet(MITRAL[1], G.sub3(APEX, BASE_C), 8, 15, 30);
+const TRICUSPID_SET = valveSet(TRICUSPID[1], [32, 10, -50], 7, 12, 24);
+const LEAFLETS = [...MITRAL_SET.leaves, ...TRICUSPID_SET.leaves];
+const VALVES = [...LEAFLETS, ...MITRAL_SET.parts, ...TRICUSPID_SET.parts];
 const ENDO = B.blend(2, ...[LV_CAVITY, RA_CAVITY, LA_CAVITY].map((node) => ({ ...node, r: node.r.map((v) => v + 2.2) })), B.ellipsoid(W(onCut([-8, 19, -1])), [31.2, 22.2, 12.2], { axes: RV_AXES }));
 ENDO.mat = "endo";
 const SHELL = B.blend(3, B.blend(2.5, B.carve(BODY, CAVITIES, 1.5), ...AURICLES), ...VESSELS);
-export const CUT_TOP = LIFT + 40;
+export const CUT_TOP = LIFT + 54;
 const REMOVE = B.intersect(3, B.halfspace(CUT.o, G.mul3(CUT.n, -1)), B.halfspace([0, 0, CUT_TOP], [0, 0, 1]));
 export const HEART_CUT = B.field(B.carve(B.blend(1.2, SHELL, ...VALVES), REMOVE, 0.25, { mat: "cut" }), { name: "heart.cut", mix: MIX, cores: [{ ...B.union(...LEAFLETS), mat: "valve" }, ENDO] });
 

@@ -1,0 +1,12 @@
+.sp-stage{display:grid;touch-action:pan-y;outline:none;cursor:grab}
+.sp-stage:focus-visible{box-shadow:0 0 0 1px var(--anatomy-mid)}
+.sp-stage>svg{grid-area:1/1;opacity:0;transition:opacity .5s var(--anatomy-ease);pointer-events:none}
+.sp-stage>svg[data-on]{opacity:1}
+.sp-turn{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:6px}
+.sp-step,.sp-dot{appearance:none;border:0;background:none;color:var(--anatomy-muted);font:12px/1 var(--anatomy-mono);cursor:pointer;padding:6px}
+.sp-step:hover,.sp-dot:hover{color:var(--anatomy-strong)}
+.sp-dot{width:20px;height:20px;position:relative}
+.sp-dot::after{content:"";position:absolute;inset:7px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--anatomy-mid)}
+.sp-dot[data-square]::after{border-radius:1px}
+.sp-dot[aria-current]::after{background:var(--anatomy-strong);box-shadow:none}
+@media (prefers-reduced-motion:reduce){.sp-stage>svg{transition:none}}

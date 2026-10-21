@@ -79,7 +79,7 @@ export function RigLive(props: { base: React.ReactNode; carriage: React.ReactNod
 ## Shapes that change
 When a part changes shape rather than position (a swelling capsule, a compressing spring, a needle turning), rebuild only its paths each frame with the kit, using `slabOf`, `coil` or `lineOnTop`, and write them to its paths: `fill`, `shades[0..3]`, `top`, `crease`, `bevel`, `outline`. One solid costs well under 0.1 ms. Measure it: a frame should stay under about 1 ms of script.
 - **Precomputed frames step.** A lever drawn from 41 prebuilt frames over ±15° moved its knob about 0.8 px per frame, visible in slow motion. Rebuild a rotating part each frame, or precompute enough frames that one step moves nothing more than 0.25 px.
-- **A rod that slides out of a gland** doesn't change shape: it is one full-length rod that moves, clipped at the gland face by a clip that stays put (`G.rodOut`, `holdStill`, `craft.md`, section 3). Never draw it as several overlapping copies.
+- **A rod that slides out of a gland** doesn't change shape: it is one full-length rod that moves, clipped at the gland face by a clip that stays put (`G.rodOut`, `holdStill`, `craft.md`, section II.3). Never draw it as several overlapping copies.
 
 ## Envelopes for one-shot events
 A flash, a click, a pop, a shake or a shock is an event with an age, not a value you set. Drive it with an envelope that has an attack and a decay. `kit/gl.mjs` exports `smooth(a, b, x)` (smoothstep) and `burst(age, rise, fall)`, which is `smooth(0, rise, age)` times `exp(−(age − rise)/fall)` after the peak and 0 before the event:

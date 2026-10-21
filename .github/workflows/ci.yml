@@ -67,6 +67,13 @@ jobs:
           node examples/heart/build.mjs
           node examples/heart/build.mjs --light
 
+      - name: Organs
+        run: |
+          for organ in kidney brain liver; do
+            node examples/$organ/build.mjs
+            node examples/$organ/build.mjs --light
+          done
+
       - name: Committed pages are unchanged
         run: |
           git status --short

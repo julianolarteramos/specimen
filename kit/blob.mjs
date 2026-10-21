@@ -845,7 +845,7 @@ export function paint(F, P, { cell = 0.4, coarse = 3, pad = 3, eps = 0.004, ligh
     if (!line.closed) {
       const ends = [0, pts.length - 1].map((index) => {
         const p = pts[index];
-        const others = [...outlineRings, ...lines.filter((other) => other !== line)];
+        const others = [...outlineRings, ...lines.filter((other) => other !== line && lengthOf(other.points) >= 1.2)];
         const hit = nearestOn(others, p);
         return hit.d <= snap ? hit.at : null;
       });

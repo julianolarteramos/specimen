@@ -23,3 +23,6 @@
 .iso [data-tissue="endo"]{--anatomy-shade-0:var(--tissue-endo-0);--anatomy-shade-1:var(--tissue-endo-1);--anatomy-shade-2:var(--tissue-endo-2);--anatomy-shade-3:var(--tissue-endo-3);--anatomy-top:var(--tissue-endo-4)}
 .iso [data-tissue="veil"]{--anatomy-shade-0:var(--tissue-veil-0);--anatomy-shade-1:var(--tissue-veil-1);--anatomy-shade-2:var(--tissue-veil-2);--anatomy-shade-3:var(--tissue-veil-3);--anatomy-top:var(--tissue-veil-4)}
 .iso{--sp-veil:.32}
+.iso:not([data-theme="light"]) .sp-veil-fill{fill:var(--tissue-veil-4);fill-opacity:.1}
+.iso:not([data-theme="light"]) .sp-veil-shine{fill-opacity:.08}
+.iso:not([data-theme="light"]) .sp-veil .iso-edge{stroke:var(--anatomy-hi);stroke-opacity:.75}

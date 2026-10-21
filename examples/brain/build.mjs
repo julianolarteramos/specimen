@@ -68,7 +68,7 @@ run({
   post: { at: [POST_AT[0], POST_AT[1]], r: 3.2, sink: 6 },
   mountOn: BRAIN_FIELD,
   tissue: Object.fromEntries(Object.keys(palettes).map((name) => [name, name])),
-  paint: { base: "cortex", jump: 5 },
+  paint: { base: "cortex", jump: 5, toneSmooth: 2.5, lineSmooth: 0.2 },
   css: tissueCss(palettes),
   keys: [
     { mark: "lit", label: "The central sulcus, between the motor and the sensory strip" },

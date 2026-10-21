@@ -1,6 +1,7 @@
 import { cameraOf, roundedPlan } from "./iso-kit.mjs";
 import { add3, sub3, mul3, dot3, len3, unit3, pathLength, resample, curveRuns, cut as cutAlong, tangentAlong } from "./lathe.mjs";
 import { runsOf } from "./tube.mjs";
+import { surfaceSamples } from "./blob.mjs";
 
 const BIG = 1e9;
 
@@ -82,6 +83,8 @@ export function tube(points, radius, meta = {}) {
   return { kind: "tube", points, radii, round: meta.round ?? [false, false], ...meta };
 }
 
+export const field = (F, meta = {}) => ({ kind: "field", F, offset: [0, 0, 0], ...meta });
+
 export const slide = (F, from, to, r, meta = {}) => ({ ...disc(F, from, to, r, meta), slide: { from, to, r } });
 
 export function moved(shape, offset) {
@@ -94,6 +97,7 @@ export function moved(shape, offset) {
   const cut = shape.cut ? (Array.isArray(shape.cut) ? shape.cut.map((one) => moved(one, offset)) : moved(shape.cut, offset)) : undefined;
   if (shape.kind === "body" || shape.kind === "prism") return { ...shape, cut, F: { ...shape.F, o: add3(shape.F.o, offset) }, _b: undefined, _f: undefined };
   if (shape.kind === "tube") return { ...shape, cut, points: shape.points.map((p) => add3(p, offset)), tips: shape.tips && shape.tips.map((tip) => tip && add3(tip, offset)), _b: undefined };
+  if (shape.kind === "field") return { ...shape, cut, offset: add3(shape.offset ?? [0, 0, 0], offset), _b: undefined };
   return { ...shape, cut, o: add3(shape.o, offset), _b: undefined };
 }
 
@@ -201,6 +205,10 @@ function baseSdf(shape, p) {
     const along = Math.max(shape.s0 - s, s - shape.s1);
     return Math.hypot(Math.max(flat, 0), Math.max(along, 0)) + Math.min(Math.max(flat, along), 0);
   }
+  if (shape.kind === "field") {
+    const o = shape.offset ?? [0, 0, 0];
+    return shape.F.v(p[0] - o[0], p[1] - o[1], p[2] - o[2]);
+  }
   if (shape.kind === "box") {
     const q = sub3(p, shape.o);
     const d = shape.axes.map((axis, index) => Math.abs(dot3(q, axis)) - shape.half[index]);
@@ -245,6 +253,12 @@ export function boundsOf(shape) {
         const p = add3(add3(F.o, mul3(F.a, s)), add3(mul3(F.u, x), mul3(F.v, y)));
         for (let i = 0; i < 3; i++) (min[i] = Math.min(min[i], p[i])), (max[i] = Math.max(max[i], p[i]));
       }
+  } else if (shape.kind === "field") {
+    const o = shape.offset ?? [0, 0, 0];
+    const b = shape.F.bounds;
+    const finite = b && [...b.min, ...b.max].every(Number.isFinite);
+    min = finite ? b.min.map((v, i) => v + o[i]) : [-BIG, -BIG, -BIG];
+    max = finite ? b.max.map((v, i) => v + o[i]) : [BIG, BIG, BIG];
   } else if (shape.kind === "box") {
     const extent = [0, 1, 2].map((i) => shape.axes.reduce((sum, axis, j) => sum + Math.abs(axis[i]) * shape.half[j], 0));
     min = shape.o.map((v, i) => v - extent[i]);
@@ -373,6 +387,12 @@ function bodyDepth(shape, c, V, eps) {
 
 function rayDepth(shape, c, V, eps, segments) {
   if (shape.kind === "body") return bodyDepth(shape, c, V, eps);
+  if (shape.kind === "field") {
+    const o = shape.offset ?? [0, 0, 0];
+    const t = shape.F.march([c[0] - o[0], c[1] - o[1], c[2] - o[2]], V, eps);
+    shape.F.unmask();
+    return t;
+  }
   const span = spanOf(c, V, boundsOf(shape).min, boundsOf(shape).max);
   if (!span) return null;
   let t = span[1] + eps;
@@ -832,7 +852,33 @@ function rimOf(tube, index) {
   return Array.from({ length: 12 }, (_, k) => add3(tip, add3(mul3(u, radius * Math.cos((k * Math.PI) / 6)), mul3(v, radius * Math.sin((k * Math.PI) / 6)))));
 }
 
-export function mountsOf(tubes, solids, { tolerance = 0.15 } = {}) {
+const organicOf = (organic) => (organic ? { depth: 1, angle: 60, ...(organic === true ? {} : organic) } : null);
+
+export const blended = (a, b) => Boolean(a && b) && (matches(a.blend, b.name ?? "") || matches(b.blend, a.name ?? "") || (b.owner && matches(a.blend, b.owner)) || (a.owner && matches(b.blend, a.owner)));
+
+function fieldNormal(shape, p) {
+  const h = 1e-3;
+  return unit3([0, 1, 2].map((i) => {
+    const a = [...p];
+    const b = [...p];
+    a[i] += h;
+    b[i] -= h;
+    return sdf(shape, a) - sdf(shape, b);
+  }));
+}
+
+function organicLanding(tube, index, best, tolerance, organic) {
+  if (!organic || !best || best.shape.kind !== "field") return false;
+  const rim = tube.tipRims ? tube.tipRims[index] : tube.radii[index ? tube.radii.length - 1 : 0];
+  if (best.high > tolerance || best.d < -(rim + organic.depth) || best.d > tolerance) return false;
+  const axis = tube.tipAxes ? tube.tipAxes[index] : unit3(index ? sub3(tube.points[tube.points.length - 1], tube.points[tube.points.length - 2]) : sub3(tube.points[1], tube.points[0]));
+  const enter = index ? axis : mul3(axis, -1);
+  const n = fieldNormal(best.shape, best.tip);
+  return -dot3(enter, n) >= Math.cos((organic.angle * Math.PI) / 180);
+}
+
+export function mountsOf(tubes, solids, { tolerance = 0.15, organic = false } = {}) {
+  const fused = organicOf(organic);
   const byName = new Map(tubes.map((tube) => [tube.name, tube]));
   const out = new Map();
   for (const tube of tubes) {
@@ -852,7 +898,9 @@ export function mountsOf(tubes, solids, { tolerance = 0.15 } = {}) {
       solids.forEach(consider);
       tubes.forEach(consider);
       if (best && byName.get(best.shape.owner) && best.shape.kind !== "tube") best.host = byName.get(best.shape.owner);
-      found[index] = best && { ...best, tip, landed: best.high <= tolerance && best.low >= -tolerance };
+      const flush = Boolean(best) && best.high <= tolerance && best.low >= -tolerance;
+      const sunk = !flush && organicLanding(tube, index, best && { ...best, tip }, tolerance, fused);
+      found[index] = best && { ...best, tip, landed: flush || sunk, sunk };
     });
     out.set(tube, found);
   }
@@ -867,7 +915,8 @@ function ringAround(sample, r) {
   return Array.from({ length: 12 }, (_, k) => add3(sample.p, add3(mul3(u, r * Math.cos((k * Math.PI) / 6)), mul3(v, r * Math.sin((k * Math.PI) / 6)))));
 }
 
-export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 0.5, touching = -0.05, through = -0.1, state, only, mounts = mountsOf(tubes, solids) } = {}) {
+export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 0.5, touching = -0.05, through = -0.1, state, only, organic = false, mounts = mountsOf(tubes, solids, { organic }) } = {}) {
+  const fused = organicOf(organic);
   const gapOf = (r) => Math.max(least, ratio * r);
   const problems = new Map();
   const note = (tube, other, kind, clearance, need, sample) => {
@@ -894,7 +943,7 @@ export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 
   const related = (tube, other, sample) => {
     if (seatedOn(other, tube.owner)) return true;
     const tips = tipsOf(tube.owner);
-    const near = (entry) => len3(sub3(sample.p, add3(entry.mount.tip, offsets.get(entry.run)))) <= zone(sample.r) + (entry.run.tipRims ? Math.max(...entry.run.tipRims) : 0);
+    const near = (entry) => len3(sub3(sample.p, add3(entry.mount.tip, offsets.get(entry.run)))) <= zone(sample.r) + (entry.run.tipRims ? Math.max(...entry.run.tipRims) : 0) + (fused && entry.mount.sunk ? sample.r + fused.depth : 0);
     for (const entry of tips) {
       if (!near(entry) || !together(tube, entry.mount.shape)) continue;
       const mount = entry.mount.shape;
@@ -926,6 +975,7 @@ export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 
     for (const shape of solids) {
       if (shape.owner && shape.owner === tube.owner) continue;
       if (matches(tube.touch, shape.name) || matches(shape.touch, tube.name)) continue;
+      if (blended(tube, shape)) continue;
       const other = poseOf.get(shape);
       const ob = boundsOf(other);
       if (!overlaps(tb, ob, Math.max(4, gapOf(widest.get(tube))))) continue;
@@ -948,6 +998,7 @@ export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 
       const tb = poseOf.get(tubes[b]);
       if (tubes[a].owner && tubes[a].owner === tubes[b].owner && tubes[a].joined) continue;
       if (matches(tubes[a].touch, tubes[b].name) || matches(tubes[b].touch, tubes[a].name)) continue;
+      if (blended(tubes[a], tubes[b])) continue;
       const bundled = tubes[a].bundle && tubes[a].bundle === tubes[b].bundle;
       const widestB = widest.get(tubes[b]);
       const envelope = bundled ? 3 : Math.max(3, gapOf(Math.min(widest.get(tubes[a]), widestB)));
@@ -977,7 +1028,7 @@ export function clearances(tubes, solids, { ratio = 0.5, least = 0.2, spacing = 
     });
 }
 
-export function terminals(tubes, solids, { tolerance = 0.15, mounts = mountsOf(tubes, solids, { tolerance }) } = {}) {
+export function terminals(tubes, solids, { tolerance = 0.15, organic = false, mounts = mountsOf(tubes, solids, { tolerance, organic }) } = {}) {
   const out = [];
   for (const tube of tubes) {
     (mounts.get(tube) ?? []).forEach((mount, index) => {
@@ -1006,8 +1057,21 @@ export function looseEnds(tubes, solids, { state = 1, tolerance = 0.15 } = {}) {
   return out;
 }
 
+function fieldSurface(shape, spacing) {
+  const F = shape.F;
+  if (!F._surface) F._surface = new Map();
+  if (!F._surface.has(spacing)) F._surface.set(spacing, surfaceSamples(F, spacing));
+  const o = shape.offset ?? [0, 0, 0];
+  const base = F._surface.get(spacing);
+  return o[0] || o[1] || o[2] ? base.map((p) => add3(p, o)) : base;
+}
+
 function surfaceOf(shape, spacing = 0.6) {
   const points = [];
+  if (shape.kind === "field") {
+    const all = fieldSurface(shape, spacing);
+    return shape.cut ? all.filter((p) => cutDistance(shape, p) >= -1e-3) : all;
+  }
   if (shape.kind === "body") {
     const { F, poly } = shape;
     const u = F.u ?? unit3(Math.abs(F.a[2]) > 0.9 ? [1, 0, 0] : [-F.a[1], F.a[0], 0]);
@@ -1110,7 +1174,7 @@ export function supports(solids, tubes, { ground = grounded, touch = 0.15, sunk 
       for (const p of surfaces[b]) gap = Math.min(gap, sdf(nodes[a], p));
       if (gap <= touch) links[a].push(b), links[b].push(a);
       const solidPair = nodes[a].kind !== "tube" && nodes[b].kind !== "tube";
-      if (solidPair && !same && gap < -sunk && !seatedOn(nodes[a], nodes[b]) && !seatedOn(nodes[b], nodes[a])) deep.push({ a: nodes[a].name, b: nodes[b].name, depth: -gap });
+      if (solidPair && !same && gap < -sunk && !seatedOn(nodes[a], nodes[b]) && !seatedOn(nodes[b], nodes[a]) && !blended(nodes[a], nodes[b])) deep.push({ a: nodes[a].name, b: nodes[b].name, depth: -gap });
     }
   }
   const held = new Uint8Array(nodes.length);
@@ -1202,6 +1266,7 @@ export function linksOf(tubes, mounts) {
       if (mount.shape.cut) for (const cut of [mount.shape.cut].flat()) link(tube.owner, ownerOf(cut));
     }
   for (const owners of seats.values()) for (const a of owners) for (const b of owners) link(a, b);
+  for (const tube of tubes) for (const other of tubes) if (tube !== other && blended(tube, other)) link(tube.owner ?? tube.name, other.owner ?? other.name);
   return links;
 }
 
@@ -1531,6 +1596,10 @@ export function markupBox(svg) {
 
 export function footprintOf(shape, cam) {
   const flat = (p) => [cam.origin[0] + dot3(p, cam.R) * cam.k, cam.origin[1] + dot3(p, cam.D) * cam.k];
+  if (shape.kind === "field") {
+    const points = fieldSurface(shape, 1).map(flat);
+    return points.length ? boxOfPoints(points, [1, 0, 0, 1, 0, 0]) : null;
+  }
   if (shape.kind === "body") {
     const { F } = shape;
     const points = [];
@@ -1565,7 +1634,7 @@ export function coverage(items, P, { least = 0.6, pad = 1, allow = [] } = {}) {
     if (!drawn) continue;
     const grow = (box) => [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
     const shapes = item.shapes.map((shape) => footprintOf(shape, cam)).reduce(unionBox, null);
-    const share = areaOf(meetBox(grow(drawn), grow(shapes))) / (areaOf(grow(drawn)) || 1);
+    const share = shapes ? areaOf(meetBox(grow(drawn), grow(shapes))) / (areaOf(grow(drawn)) || 1) : 0;
     if (share < least) out.push({ name: item.name, share, drawn, shapes });
   }
   return out.sort((a, b) => a.share - b.share);
@@ -1667,7 +1736,7 @@ export function solidClearances(solids, { state, sunk = 0.5, spacing = 0.6, cell
       if (Math.abs(rel[0]) + Math.abs(rel[1]) + Math.abs(rel[2]) < 1e-6 && !stretched.has(list[a]) && !stretched.has(list[b])) continue;
       const box = { min: [0, 1, 2].map((i) => Math.max(bounds[a].min[i] + rel[i], bounds[b].min[i])), max: [0, 1, 2].map((i) => Math.min(bounds[a].max[i] + rel[i], bounds[b].max[i])) };
       if (box.min.some((v, i) => v > box.max[i] - sunk)) continue;
-      if (seatedOn(list[a], list[b]) || seatedOn(list[b], list[a])) continue;
+      if (seatedOn(list[a], list[b]) || seatedOn(list[b], list[a]) || blended(list[a], list[b])) continue;
       let worst = -sunk;
       let at = null;
       const local = { min: sub3(box.min, rel), max: sub3(box.max, rel) };
@@ -1736,7 +1805,49 @@ export function seats(solids) {
   return out;
 }
 
-export function report({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends, folds: bends, supports: held, loose, apart, flight, crowding: crowded, self, wobble: wobbly, seats: seated, cover: covered } = {}, { limit = 4000 } = {}) {
+const BOUNDLESS = 1e8;
+
+export function fieldBounds(solids) {
+  return solids
+    .filter((shape) => shape.kind === "field")
+    .filter((shape) => {
+      const b = shape.F.bounds;
+      return !b || ![...b.min, ...b.max].every((v) => Number.isFinite(v) && Math.abs(v) < BOUNDLESS) || b.min.some((v, i) => v > b.max[i]);
+    })
+    .map((shape) => ({ name: shape.name }));
+}
+
+export function lipschitz(solids, { samples = 400, slack = 0.05, h = 1e-3 } = {}) {
+  const out = [];
+  for (const shape of solids) {
+    if (shape.kind !== "field" || !shape.F.bounds) continue;
+    const { min, max } = shape.F.bounds;
+    if (![...min, ...max].every((v) => Number.isFinite(v) && Math.abs(v) < BOUNDLESS)) continue;
+    const L = shape.F.L ?? 1;
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const surface = surfaceSamples(shape.F, 1.5);
+    const stride = Math.max(1, Math.floor(surface.length / samples));
+    const points = [...surface.filter((_, i) => i % stride === 0), ...Array.from({ length: samples }, () => min.map((v, i) => v + random() * (max[i] - v)))];
+    let worst = 0;
+    let at = null;
+    for (const p of points) {
+      const g = [0, 1, 2].map((i) => {
+        const a = [...p];
+        const b = [...p];
+        a[i] += h;
+        b[i] -= h;
+        return (shape.F.value(a) - shape.F.value(b)) / (2 * h);
+      });
+      const m = Math.hypot(g[0], g[1], g[2]);
+      if (m > worst) (worst = m), (at = p);
+    }
+    if (worst > L * (1 + slack)) out.push({ name: shape.name, L, slope: worst, at });
+  }
+  return out;
+}
+
+export function report({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends, folds: bends, supports: held, loose, apart, flight, crowding: crowded, self, wobble: wobbly, seats: seated, cover: covered, unbounded, steep } = {}, { limit = 4000 } = {}) {
   const lines = [];
   const f = (v) => (Math.round(v * 100) / 100).toFixed(2);
   const p3 = (p) => `[${p.map((v) => v.toFixed(1)).join(", ")}]`;
@@ -1787,6 +1898,14 @@ export function report({ clearance = [], depth = { problems: [], missing: [] }, 
     lines.push(`saddles off their host apart: ${seated.length}`);
     for (const d of seated.slice(0, limit)) lines.push(`  ${d.name} (${d.piece}) is cut to ${d.host} (${d.hostPiece}); apart, its cut base is on show`);
   }
+  if (unbounded) {
+    lines.push(`fields without bounds: ${unbounded.length}`);
+    for (const c of unbounded.slice(0, limit)) lines.push(`  ${c.name}  has no finite bounds: give the field primitives or pass bounds`);
+  }
+  if (steep) {
+    lines.push(`lipschitz: ${steep.length} field${steep.length === 1 ? "" : "s"} steeper than declared`);
+    for (const c of steep.slice(0, limit)) lines.push(`  ${c.name}  |∇f| reaches ${f(c.slope)} > L = ${f(c.L)} at ${p3(c.at)}; sphere tracing would step through its surface`);
+  }
   if (covered) {
     lines.push(`stand-in shapes: ${covered.length} item${covered.length === 1 ? "" : "s"} whose recorded shape covers too little of what it draws`);
     for (const c of covered.slice(0, limit)) lines.push(`  ${c.name}  its shapes cover ${Math.round(c.share * 100)}% of its drawing (drawn ${c.drawn.map((v) => v.toFixed(0)).join(",")}, recorded ${c.shapes.map((v) => v.toFixed(0)).join(",")}); record the true shape of what you draw`);
@@ -1809,8 +1928,8 @@ export function report({ clearance = [], depth = { problems: [], missing: [] }, 
   return lines.join("\n");
 }
 
-export const failures = ({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends = [], folds: bends = [], supports: held = { loose: [], sunk: [] }, loose = [], apart = [], flight = [], crowding: crowded = [], self = [], wobble: wobbly = [], seats: seated = [], cover: covered = [] }) =>
-  covered.length + clearance.length + apart.length + flight.length + crowded.length + ends.length + loose.filter((e) => !e.free).length + bends.length + held.loose.length + (held.hanging ?? []).length + held.sunk.length + depth.problems.length + depth.missing.length + self.length + wobbly.length + seated.length;
+export const failures = ({ clearance = [], depth = { problems: [], missing: [] }, terminals: ends = [], folds: bends = [], supports: held = { loose: [], sunk: [] }, loose = [], apart = [], flight = [], crowding: crowded = [], self = [], wobble: wobbly = [], seats: seated = [], cover: covered = [], unbounded = [], steep = [] }) =>
+  unbounded.length + steep.length + covered.length + clearance.length + apart.length + flight.length + crowded.length + ends.length + loose.filter((e) => !e.free).length + bends.length + held.loose.length + (held.hanging ?? []).length + held.sunk.length + depth.problems.length + depth.missing.length + self.length + wobbly.length + seated.length;
 
 export const sameRun = (a, b) => Boolean(a.route) && a.route === b.route && Math.abs(a.chunk - b.chunk) <= 1;
 
@@ -1878,14 +1997,14 @@ export function settle(R, P = R.P, { states = explodeStates(R.order, R.spring).d
 
 const worstOf = (lists) => [...lists.flat().reduce((all, c) => (all.has(`${c.tube}|${c.other}`) && all.get(`${c.tube}|${c.other}`).clearance <= c.clearance ? all : all.set(`${c.tube}|${c.other}`, c)), new Map()).values()].sort((x, y) => x.clearance - y.clearance);
 
-export function audit(R, P = R.P, { allow = [], crowd = [], cover = [], ground = R.ground, frames = explodeStates(R.order, R.spring).frames, apart = R.order.length > 0 } = {}) {
+export function audit(R, P = R.P, { allow = [], crowd = [], cover = [], ground = R.ground, frames = explodeStates(R.order, R.spring).frames, apart = R.order.length > 0, organic = false } = {}) {
   const { items, overlaps, solved } = R.settled ?? settle(R, P);
-  const mounts = mountsOf(R.tubes, R.solids);
+  const mounts = mountsOf(R.tubes, R.solids, { organic });
   const links = linksOf(R.tubes, mounts);
   return {
-    clearance: clearances(R.tubes, R.solids, { mounts }),
-    apart: apart ? [...clearances(R.tubes, R.solids, { state: 1, mounts, only: "through" }), ...solidClearances(R.solids, { state: 1 })] : [],
-    flight: worstOf(frames.map((state) => [...clearances(R.tubes, R.solids, { state, mounts, only: "through" }), ...solidClearances(R.solids, { state })])),
+    clearance: clearances(R.tubes, R.solids, { mounts, organic }),
+    apart: apart ? [...clearances(R.tubes, R.solids, { state: 1, mounts, organic, only: "through" }), ...solidClearances(R.solids, { state: 1 })] : [],
+    flight: worstOf(frames.map((state) => [...clearances(R.tubes, R.solids, { state, mounts, organic, only: "through" }), ...solidClearances(R.solids, { state })])),
     crowding: (apart ? [0, 1] : [0]).flatMap((state) => crowding(R.routes, P, { links, items, allow: crowd, state, rods: slenderOf(R.solids) })),
     cover: coverage(items, P, { allow: cover }),
     terminals: terminals(R.tubes, R.solids, { mounts }),
@@ -1896,6 +2015,8 @@ export function audit(R, P = R.P, { allow = [], crowd = [], cover = [], ground =
     seats: seats(R.solids),
     supports: supports(R.solids, R.tubes, { ground }),
     depth: depthOrder(items, P, { overlaps, solved, allow }),
+    unbounded: fieldBounds(R.solids),
+    steep: lipschitz(R.solids),
   };
 }
 

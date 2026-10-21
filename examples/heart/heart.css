@@ -1,0 +1,17 @@
+.hr-stage{display:grid;touch-action:pan-y;outline:none;cursor:grab}
+.hr-stage:focus-visible{box-shadow:0 0 0 1px var(--anatomy-mid)}
+.hr-stage>svg{grid-area:1/1;opacity:0;transition:opacity .5s var(--anatomy-ease);pointer-events:none}
+.hr-stage>svg[data-on]{opacity:1}
+.hr-turn{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:6px}
+.hr-step,.hr-dot{appearance:none;border:0;background:none;color:var(--anatomy-muted);font:12px/1 var(--anatomy-mono);cursor:pointer;padding:6px}
+.hr-step:hover,.hr-dot:hover{color:var(--anatomy-strong)}
+.hr-dot{width:20px;height:20px;position:relative}
+.hr-dot::after{content:"";position:absolute;inset:7px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--anatomy-mid)}
+.hr-dot[aria-current]::after{background:var(--anatomy-strong);box-shadow:none}
+@media (prefers-reduced-motion:reduce){.hr-stage>svg{transition:none}}
+.iso{--tissue-muscle-0:#3a2826;--tissue-muscle-1:#432f2c;--tissue-muscle-2:#4c3632;--tissue-muscle-3:#563e39;--tissue-muscle-4:#62473f;--tissue-oxy-0:#3d2524;--tissue-oxy-1:#472b29;--tissue-oxy-2:#51322f;--tissue-oxy-3:#5c3935;--tissue-oxy-4:#68423d;--tissue-deoxy-0:#232a33;--tissue-deoxy-1:#29313b;--tissue-deoxy-2:#303843;--tissue-deoxy-3:#37404c;--tissue-deoxy-4:#404a57;--tissue-coronary-0:#8f2f2a;--tissue-coronary-1:#a13631;--tissue-coronary-2:#b33f38;--tissue-coronary-3:#c44a41;--tissue-coronary-4:#d4584e}
+.iso[data-theme="light"]{--tissue-muscle-0:#cfb3ac;--tissue-muscle-1:#d9c0ba;--tissue-muscle-2:#e3cdc8;--tissue-muscle-3:#ecdbd7;--tissue-muscle-4:#f5eae7;--tissue-oxy-0:#d6aaa5;--tissue-oxy-1:#dfb8b3;--tissue-oxy-2:#e7c6c2;--tissue-oxy-3:#efd5d2;--tissue-oxy-4:#f7e6e4;--tissue-deoxy-0:#aeb8c6;--tissue-deoxy-1:#bcc5d1;--tissue-deoxy-2:#cad2dc;--tissue-deoxy-3:#d8dee6;--tissue-deoxy-4:#e8ecf1;--tissue-coronary-0:#ad3a34;--tissue-coronary-1:#bd4841;--tissue-coronary-2:#cb5a52;--tissue-coronary-3:#d76e66;--tissue-coronary-4:#e3877f}
+.iso [data-tissue="muscle"]{--anatomy-shade-0:var(--tissue-muscle-0);--anatomy-shade-1:var(--tissue-muscle-1);--anatomy-shade-2:var(--tissue-muscle-2);--anatomy-shade-3:var(--tissue-muscle-3);--anatomy-top:var(--tissue-muscle-4)}
+.iso [data-tissue="oxy"]{--anatomy-shade-0:var(--tissue-oxy-0);--anatomy-shade-1:var(--tissue-oxy-1);--anatomy-shade-2:var(--tissue-oxy-2);--anatomy-shade-3:var(--tissue-oxy-3);--anatomy-top:var(--tissue-oxy-4)}
+.iso [data-tissue="deoxy"]{--anatomy-shade-0:var(--tissue-deoxy-0);--anatomy-shade-1:var(--tissue-deoxy-1);--anatomy-shade-2:var(--tissue-deoxy-2);--anatomy-shade-3:var(--tissue-deoxy-3);--anatomy-top:var(--tissue-deoxy-4)}
+.iso [data-tissue="coronary"]{--anatomy-shade-0:var(--tissue-coronary-0);--anatomy-shade-1:var(--tissue-coronary-1);--anatomy-shade-2:var(--tissue-coronary-2);--anatomy-shade-3:var(--tissue-coronary-3);--anatomy-top:var(--tissue-coronary-4)}

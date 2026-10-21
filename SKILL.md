@@ -89,6 +89,7 @@ The kit is in `kit/`:
 | `kit/lathe.mjs` | Round parts along any axis: `frameAlong`, `lathe` (smooth shading switches on by itself for any profile with a smooth knot), `solidOf`, `disc`, `ringBand`, `sphereOf`, `saddleOf`, `bandsOf` (one curved body cut into depth-sortable bands that share one surface, with one outline from `sidesOf`), visible arcs, ribs and bolt circles on round surfaces (`ribsOf` and `dotsOf` take `fade`, `ribsOf` takes `seams`), `rodOut` for a rod that slides out of a gland, and `fillet` for pipe routes. |
 | `kit/tube.mjs` | `tubePieces` splits a 3D pipe or cable into depth-sortable chunks (with `breaks`, `gaps` under collars and clamps, elliptical end caps, and `rings` for a braid, corrugation or wrap that follows the cross-section through every joint), and `tubeSvg` draws one; `crossingsOf` finds where a route passes through a clamp, `runsOf` the drawn runs. Its `.tb-*` fills are in `ISO_CSS`. |
 | `kit/audit.mjs` | Proves the geometry. `recorder(P, { order, spring })` collects items, shapes (turned bodies, slabs, prisms, boxes, balls, tubes, pads cut by their host) and routes as the helpers draw them; `settle(R, P)` ray-casts every overlapping pair for true depth, at rest, apart and in the replayed explode, and sets the painter's keys (`overlapsOf`, `orderKeys`); `auditOrExit(R, P)` is the `--audit` hook that runs every check (`clearances`, `solidClearances`, `terminals`, `looseEnds`, `supports`, `folds`, `selfOverlaps`, `crowding` with slender solids as lines, `coverage` for stand-in shapes, `wobble`, `seats`, `depthOrder`) and exits non-zero on any problem. `A.slide` records a rod that slides out of a gland. `references/kit.md`, section 12. |
+| `kit/blob.mjs` | Organic parts: signed distance fields of balls, ellipsoids, round cones and vessels, smooth-blended, carved and clipped, ray-marched at build time into seamless four-tone solids with tissue layers (`field`, `paint`, `fieldSvg`). Audit them with `A.field` and `{ organic: true }`. |
 | `kit/gl.mjs` | The WebGL layer for shaders inside the drawing: `GLSL_ISO` (the camera in GLSL, including `rayOf` and `pixelOf`), `glCamera(P)`, `glLayer(...)`, and the JS envelopes `smooth`, `burst` and `settle`. |
 | `scripts/capture.mjs` | Headless Chrome screenshots, close-ups and console checks, with WebGL on. Run with `node`. |
 | `scripts/drive.mjs` | Scripted headless Chrome with WebGL: move, click, key, slow motion, wait-until, eval, shots and contact sheets that catch pops; `--no-webgl` and `--preload`. |
@@ -138,6 +139,10 @@ Use a shader only for what lines can't draw: fire and exhaust, water and caustic
 - **Restraint.** Cap the device ratio at 1.5 and render only while the effect is active and onscreen. Reduced motion gets one still frame, and the SVG must still read without WebGL.
 
 Read `references/webgl.md` before writing any shader.
+
+## Organic parts (specimen fork)
+
+Organs, vessels and other soft shapes that no prism, lathe or tube can make come from `kit/blob.mjs`: one signed distance field per organ (`B.blend(k, B.ellipsoid(...), B.capsule(...), B.vessel(points, r))`, `B.carve`, `B.clip` for cut vessel ends with a lumen), with a `mat` per primitive and `mix` for graded tissue joins. `B.paint(F, P)` ray-marches it at build time and `B.fieldSvg(painted, { tissue })` draws it as seamless kit solids; map tissue tokens in page CSS (`--tissue-<name>-0..4`). Record it with `A.field(F)` and audit with `{ organic: true }`. Fuse vessels and surface arteries into the same field rather than sinking separate parts into it. Rotation is a set of pre-generated views at several azimuths, each audited, with a crossfade. `examples/heart/` is the reference.
 
 ## Printable sheets (A4)
 

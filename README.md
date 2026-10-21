@@ -1,6 +1,6 @@
 <h1 align="center">Anatomy</h1>
 
-<p align="center"><b>A Claude skill that explains an idea by building it as a real, working object.</b><br>Also runs in Antigravity, OpenCode, Codex and MiniMax Code.<br>Crafted, interactive isometric figures with many small precise parts, in SVG and WebGL.</p>
+<p align="center"><b>A Claude skill that explains an idea by building it as a real, working object.</b><br><i>This is <b>specimen</b>, a fork of Anatomy with organic primitives for anatomical organs and vessels.</i><br>Also runs in Antigravity, OpenCode, Codex and MiniMax Code.<br>Crafted, interactive isometric figures with many small precise parts, in SVG and WebGL.</p>
 
 <p align="center">
   <a href="https://code.claude.com/docs/en/skills"><img src="https://img.shields.io/badge/Claude_Code-skill-1b1b19?style=flat-square&logo=claude&logoColor=white" alt="Claude Code skill"></a>
@@ -72,11 +72,11 @@ That's it. No API keys and nothing to `npm install`: the kit uses only Node's bu
     <td><sub><b>ripple-tank</b>: SVG apparatus over two WebGL layers (lamp light and caustics on the paper, reflections in the water) driven by a dispersion and optics model.</sub></td>
   </tr>
   <tr>
-    <td><img src=".github/assets/turning-dial.webp" alt="A combination dial on a raised door plate. A small gold and chrome robot hand lies on the dial and turns with it; a green light glows under one fingertip."></td>
+    <td><img src="examples/heart/shots/heart-light-1280.png" alt="A classroom model of a human heart on a turned plinth: ventricles with the apex to the model's left, the aortic arch with its three branches, the pulmonary trunk, the venae cavae and red coronary arteries on the surface."></td>
     <td><img src=".github/assets/dial-indicator.webp" alt="A dial indicator gauge on a stand above a base plate with a ruler strip. Its plunger rests on one of three gauge blocks on a sliding carriage."></td>
   </tr>
   <tr>
-    <td><sub><b>turning-dial</b>: the 3D mode (beta). About 90 parts are re-projected and re-shaded every frame as you drag the dial.</sub></td>
+    <td><sub><b>heart</b> (specimen fork): one organic distance field, ray-marched at build time into four-tone shading with tissue colours; four audited views with a crossfade, and a calm heartbeat.</sub></td>
     <td><sub><b>dial-indicator</b>: the smallest example, about 300 lines. Hover to slide the carriage; the needle reads each block.</sub></td>
   </tr>
 </table>
@@ -240,6 +240,7 @@ Each framework-free example has a Node build script that writes standalone pages
 | [`raptor-engine`](examples/raptor-engine) | A Raptor 2 engine in a test stand. It comes apart into 11 assemblies, and a WebGL plume, shock, splash and steam render between the back and front SVG. The reference for dense pipework, smooth shading, fades and the audit. The build takes a few minutes. | `node examples/raptor-engine/build.mjs` |
 | [`ripple-tank`](examples/ripple-tank) | A school ripple tank on tall legs over a paper screen, seen from 44° up. Two WebGL layers are registered to the isometric planes and driven by a pure model in `model.mjs`. | `node examples/ripple-tank/build.mjs` |
 | [`test-rig`](examples/test-rig) | A production figure from a React/Next.js site: a glass button on a spring-mounted carriage, a finger probe on a rail, and a dial gauge reading the lean. 53 solids. No build script: copy it into a React app. | none |
+| [`heart`](examples/heart) | The specimen fork's organic example: a classroom heart model on a turned plinth, built from one signed distance field (`kit/blob.mjs`) with chambers, auricles, great vessels with cut ends and coronary arteries fused in. Four views at different azimuths crossfade; each is audited in organic mode. | `node examples/heart/build.mjs` |
 | [`spot-plate`](examples/spot-plate) | A second figure from the same site: six pairs of glass drops on a spot plate that run together into one piece of glass as a fan of feeler blades opens. Each pair is drawn from one distance field. No build script: copy it into a React app. | none |
 
 The Raptor and the arcade cabinet also print. `node scripts/print.mjs examples/raptor-engine/sheet.mjs --format all` writes three A4 PDFs from the built light page: a one-page poster, a one-page technical drawing and a two-page detailed explainer. Ask for a printable version of any figure and Anatomy writes its `sheet.mjs`; see [`references/print.md`](references/print.md).
@@ -269,7 +270,8 @@ anatomy/
 │   ├── lathe.mjs             round parts on any axis
 │   ├── tube.mjs              pipes, tubes and cables
 │   ├── audit.mjs             the geometry audit
-│   └── gl.mjs                the WebGL layer for shaders inside the drawing
+│   ├── gl.mjs                the WebGL layer for shaders inside the drawing
+│   └── blob.mjs              organic parts: signed distance fields ray-marched into shaded paths
 ├── references/               long-form guides Claude reads as needed
 │   ├── craft.md  kit.md  motion.md  react.md
 │   └── verify.md  webgl.md  walkthrough.md

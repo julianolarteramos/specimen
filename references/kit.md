@@ -17,6 +17,7 @@ Everything is in `kit/iso-kit.ts`, with the same API in `kit/iso-kit.mjs`. World
 12. The audit (`kit/audit.mjs`)
 13. The WebGL layer (`kit/gl.mjs`)
 14. Tools
+15. Organic fields (`kit/blob.mjs`)
 
 ## 1. Types
 ```ts
@@ -370,3 +371,22 @@ A value for `fixed`, `set` or `draw` can be a number (float), an array of length
 | `scripts/drive.mjs` | Scripted sessions in headless Chrome with WebGL on: scroll, move, click, key, slow, until, eval, shots and contact sheets. `--no-webgl` checks the SVG fallback and `--preload file.js` runs a script before the page's own. Use it for shader transitions and anything with a sequence. See `references/verify.md`. |
 | `scripts/lines.mjs` | The line-end check: every texture line in the card must end on a stroke, a dot or an outline, or under a later fill. `--out` rings the failures; exits 1 on any. The same check is the `["lines"]` action of `drive.mjs`. See `references/verify.md`, "Line ends". |
 | `scripts/inline-kit.mjs` | `kitScript()` and `glScript()` return the kit and the WebGL layer as plain script, to inline into a standalone page. |
+
+## 15. Organic fields (`kit/blob.mjs`, specimen fork)
+```js
+import * as B from "../../kit/blob.mjs";
+const F = B.field(B.blend(3, B.ellipsoid(c, [rx, ry, rz], { axes, mat: "muscle" }), B.vessel(points, (t) => 6 - 2 * t, { mat: "oxy" })), { name: "organ", mix: { pairs: [["muscle", "oxy"]], width: 6, steps: 3, bias: 2 } });
+const painted = B.paint(F, P, { cell: 0.4, coarse: 2 });
+const svg = B.fieldSvg(painted, { tone: "hi", tissue: { muscle: "muscle", oxy: "oxy" } });
+R.put({ name: "organ", at, svg, shapes: [R.solid(A.field(F, { name: "organ" }))] });
+A.auditOrExit(R, P, { organic: true });
+```
+| Function | What it does |
+|---|---|
+| `ball(c, r)`, `ellipsoid(c, [a, b, c], { axes })`, `capsule(a, b, ra, rb)`, `vessel(points, radius)` | Primitives. Balls and round cones are exact distances; the ellipsoid is the 1-Lipschitz bound `(|q/r| − 1)·min r`. `vessel` chains round cones into a balanced tree; sample curves densely (0.5–0.8 units for a large vessel) and do not smooth-blend consecutive cones (that bulges every joint). Every primitive takes `mat`. |
+| `blend(k, ...)`, `union(...)`, `carve(base, cutter, k)`, `clip(base, o, n, k)`, `custom(f, { bounds, L })` | Polynomial smooth union (a lower bound, so marching is safe), hard union, smooth subtraction, a cut by the half-space `n·(p − o) ≤ 0` (a flat vessel end) and a hand-written field with its bounds and Lipschitz constant. |
+| `field(root, { L, mix, name })` | Compiles the tree: `value(p)`, `march(c, V)`, `normal`, `material`, `bounds`. Every node carries a bounding sphere, so a ray only evaluates what it can reach. `mix.pairs` grades two tissues over `width` units in `steps` bands (pair options `{ steps, width, bias }`; `steps: 0` with a small width keeps a hard edge on the vessel itself). |
+| `paint(F, P, { cell, coarse, smooth, jump, crease, fade, seams })` | One ray per `cell` viewBox units, coarse first; every crossing is bisected. Returns `layers` (one seamless `SolidPaths` per tissue), `outline`, `inner` contours (depth jumps over `jump` world units and creases over `crease`°; open ends snap to the outline or fade over `fade` px) and `seams`. |
+| `fieldSvg(painted, { tone, tissue })`, `curvePath(points, closed)`, `surfaceSamples(F, spacing)` | The markup (an underlay, one solid per tissue with `data-tissue`, then lines and the outline), smooth relative cubic paths, and surface points for the audit. |
+
+**Audit.** `A.field(F, meta)` records the field (`sdf`, `boundsOf`, `moved`, ray depth by sphere tracing, surface samples, silhouette footprint). `audit(R, P, { organic: true | { depth, angle } })` lets a tube end sink into a field up to its rim radius plus `depth` when it enters within `angle` of the inward normal, excuses pairs that name each other in `blend: [names]` from clearance, sunk and crowding, and always runs `fields without bounds` and `lipschitz` (sampled |∇f| above `F.L`). A drawn organ recorded with a smaller field fails `cover` as any stand-in does.

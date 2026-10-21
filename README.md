@@ -72,7 +72,7 @@ That's it. No API keys and nothing to `npm install`: the kit uses only Node's bu
     <td><sub><b>ripple-tank</b>: SVG apparatus over two WebGL layers (lamp light and caustics on the paper, reflections in the water) driven by a dispersion and optics model.</sub></td>
   </tr>
   <tr>
-    <td><img src="examples/heart/shots/heart-light-1280.png" alt="A classroom model of a human heart on a turned plinth: ventricles with the apex to the model's left, the aortic arch with its three branches, the pulmonary trunk, the venae cavae and red coronary arteries on the surface."></td>
+    <td><img src=".github/assets/heart.png" alt="A classroom model of a human heart on a turned plinth: ventricles with the apex to the model's left, the aortic arch with its three branches, the pulmonary trunk, the venae cavae and red coronary arteries on the surface."></td>
     <td><img src=".github/assets/dial-indicator.webp" alt="A dial indicator gauge on a stand above a base plate with a ruler strip. Its plunger rests on one of three gauge blocks on a sliding carriage."></td>
   </tr>
   <tr>

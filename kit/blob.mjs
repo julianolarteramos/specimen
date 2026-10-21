@@ -341,7 +341,7 @@ export function field(root, { L, steps = 600, mat = "tissue", name, mix = null, 
     if (blends.size) nearest.fill(BIG);
     for (let i = 0; i < leaves.length; i++) {
       if (leaves[i].cutter || (masked && !on[leaves[i].index])) continue;
-      const d = leaves[i].fn(x, y, z);
+      const d = Math.abs(leaves[i].fn(x, y, z));
       if (d < best) (best = d), (index = i);
       if (blends.size && d < nearest[matOf[i]]) nearest[matOf[i]] = d;
     }

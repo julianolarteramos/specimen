@@ -17,7 +17,7 @@ jobs:
   examples:
     name: Rebuild the examples
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
 
@@ -72,6 +72,12 @@ jobs:
           for organ in kidney brain liver; do
             node examples/$organ/build.mjs
             node examples/$organ/build.mjs --light
+          done
+
+      - name: Demo site copies match the light pages
+        run: |
+          for organ in heart kidney brain liver; do
+            cmp examples/$organ/$organ-light.html docs/$organ.html
           done
 
       - name: Committed pages are unchanged

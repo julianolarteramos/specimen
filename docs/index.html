@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>specimen · anatomy figures</title>
+<meta name="description" content="specimen is a Claude Code skill that draws interactive isometric SVG figures of anatomy as classroom teaching models: a heart, a kidney, a brain hemisphere and a liver.">
+<meta name="color-scheme" content="light">
+<style>
+:root{--page:#f2f2ef;--card:#fbfbfa;--text:#57575a;--strong:#18181a;--muted:#8c8c90;--rule:#d4d4d6;--edge:#8a8a8f;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--text);font:16px/1.55 var(--sans)}
+a{color:var(--strong);text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:40px 16px 56px}
+.mono{font-family:var(--mono);letter-spacing:.02em}
+header{display:grid;gap:14px;margin-bottom:36px}
+.kicker{font:12px/1 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+h1{margin:0;color:var(--strong);font:600 clamp(32px,6vw,48px)/1.05 var(--sans);letter-spacing:-.02em}
+.pitch{margin:0;max-width:44em;font-size:18px}
+.links{display:flex;flex-wrap:wrap;gap:8px 20px;font:13px/1.4 var(--mono)}
+pre{margin:0;max-width:100%;overflow-x:auto;background:var(--card);border:1px solid var(--rule);padding:12px 14px;font:13px/1.5 var(--mono);color:var(--strong)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.card.wide{grid-column:1/-1}
+.card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--edge);color:inherit;text-decoration:none;min-width:0}
+.card:hover{border-color:var(--strong)}
+.card:focus-visible{outline:2px solid var(--strong);outline-offset:2px}
+.corners{display:flex;justify-content:space-between;gap:12px;padding:14px 16px 0;font:12px/1 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.corners b{font-weight:400;color:var(--strong);text-transform:none;letter-spacing:.02em}
+.card img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+.body{display:grid;gap:8px;padding:0 16px 16px;margin-top:auto}
+.body p{margin:0;font-size:15px}
+.open{font:12px/1 var(--mono);color:var(--strong);text-transform:uppercase;letter-spacing:.08em}
+.views{display:flex;gap:6px;flex-wrap:wrap;font:12px/1.4 var(--mono);color:var(--muted)}
+.strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin:8px 0 12px;background:var(--rule);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.strip figure{margin:0;background:var(--card)}
+.strip figcaption{padding:6px 8px 8px;font:11px/1.3 var(--mono);color:var(--muted);text-align:center}
+section{margin-top:44px}
+h2{margin:0 0 12px;color:var(--strong);font:600 20px/1.2 var(--sans)}
+ul{margin:0;padding-left:1.2em}
+li{margin:4px 0}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-size:14px;color:var(--muted)}
+footer p{margin:6px 0}
+@media (max-width:880px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}.strip figcaption{font-size:10px;padding:4px 2px 6px}.wrap{padding-top:28px}.pitch{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<span class="kicker">A Claude Code skill · MIT</span>
+<h1>specimen</h1>
+<p class="pitch">Interactive isometric SVG figures of anatomy, drawn as classroom teaching models: organs and vessels from smooth distance fields, cut open along real planes or seen through a translucent membrane, standing on a turned plinth.</p>
+<nav class="links" aria-label="Project links">
+<a href="https://github.com/julianolarteramos/specimen">GitHub</a>
+<a href="https://github.com/julianolarteramos/specimen#readme">README</a>
+<a href="https://github.com/julianolarteramos/specimen/blob/main/README.es.md" hreflang="es">Léeme en español</a>
+<a href="https://github.com/julianolarteramos/specimen/blob/main/CHANGELOG.md">Changelog</a>
+</nav>
+<pre><code>npx skills add julianolarteramos/specimen</code></pre>
+</header>
+
+<main>
+<div class="grid">
+<a class="card wide" href="heart.html">
+<div class="corners"><span>Fig 1</span><b>Heart</b></div>
+<div class="strip">
+<figure><img src="img/heart.webp" width="560" height="560" alt="A classroom heart model on a turned plinth: ventricles with the apex down and to the left, the aortic arch with its three branches, the pulmonary trunk, the venae cavae and red coronary arteries on the surface."><figcaption>exterior</figcaption></figure>
+<figure><img src="img/heart-cut.webp" width="560" height="560" alt="The same heart model opened along the four-chamber plane: the thick left ventricular wall beside the thin right one, the septum, the mitral and tricuspid leaflets and the papillary muscles."><figcaption>four-chamber cut</figcaption></figure>
+<figure><img src="img/heart-pericardium.webp" width="560" height="560" alt="The heart model seen through a translucent pericardium that wraps the ventricles and the roots of the great vessels."><figcaption>pericardium</figcaption></figure>
+</div>
+<div class="body">
+<p>Chambers, auricles, great vessels with cut ends and coronary arteries in one field. Four turned views, a four-chamber section and a view through the pericardium; it beats at the rate in the readout.</p>
+<span class="views">← → turn · ↑ ↓ rate</span>
+<span class="open">Open the heart →</span>
+</div>
+</a>
+
+<a class="card" href="kidney.html">
+<div class="corners"><span>Fig 2</span><b>Kidney</b></div>
+<img src="img/kidney-section.webp" width="560" height="560" alt="A left kidney model opened on its coronal plane: cortex, dark medullary pyramids, calyces and the renal pelvis in sinus fat, the ureter, and the adrenal gland cut to show its cortex and medulla.">
+<div class="body">
+<p>A left kidney with its adrenal gland, whole and opened on its coronal plane: cortex, medullary pyramids, calyces, pelvis, the hilum vessels and the ureter.</p>
+<span class="views">front · turned · coronal section</span>
+<span class="open">Open the kidney →</span>
+</div>
+</a>
+
+<a class="card" href="brain.html">
+<div class="corners"><span>Fig 3</span><b>Brain</b></div>
+<img src="img/brain.webp" width="560" height="560" alt="A model of the left half of a brain on a plinth, seen from the left: folded gyri and sulci, the lateral fissure, the cerebellum with its folia and the brainstem.">
+<div class="body">
+<p>The left hemisphere with gyri and sulci carved into the cortex, the lateral fissure and the central sulcus, the cerebellum with its folia and the brainstem.</p>
+<span class="views">lateral · from the front · from behind</span>
+<span class="open">Open the brain →</span>
+</div>
+</a>
+
+<a class="card" href="liver.html">
+<div class="corners"><span>Fig 4</span><b>Liver</b></div>
+<img src="img/liver.webp" width="560" height="560" alt="A liver model seen from the front: the large right lobe and tapering left lobe divided by the falciform ligament, the green gallbladder below, the portal vein, hepatic artery and bile duct at the porta, and the inferior vena cava above.">
+<div class="body">
+<p>The right and left lobes, the falciform ligament, the gallbladder, the portal vein, hepatic artery and bile duct at the porta, and the inferior vena cava.</p>
+<span class="views">front · from the right · from the left</span>
+<span class="open">Open the liver →</span>
+</div>
+</a>
+</div>
+
+<section>
+<h2>How the figures are made</h2>
+<ul>
+<li>Each organ is one signed distance field of fused ellipsoids, balls, round cones and vessels, ray-marched at build time into four-tone SVG shading with tissue colours.</li>
+<li>Each view is a separate camera azimuth, checked by the geometry audit in organic mode; the page crossfades between them.</li>
+<li>Sections are planes carved through the field, with their own cut-face tissue. Membranes are translucent veils drawn last.</li>
+<li>Each page is one self-contained HTML file with no network requests.</li>
+</ul>
+</section>
+</main>
+
+<footer>
+<p>specimen is a fork of <a href="https://github.com/wheresryan22/anatomy">Anatomy</a> by Ryan (MIT). It keeps Anatomy's isometric kit, audit and browser checks, and adds organic fields, sections, veils and the organ examples.</p>
+<p>The figures are teaching models: they simplify surfaces and colours, and are not a medical reference.</p>
+</footer>
+</div>
+</body>
+</html>

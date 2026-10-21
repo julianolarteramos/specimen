@@ -1,6 +1,6 @@
-# Contributing to Anatomy
+# Contributing to specimen
 
-Thank you for helping. Anatomy is judged by how its figures look at 4× zoom, so most of this guide is about checking your work before anyone else does.
+Thank you for helping. Specimen is judged by how its figures look at 4× zoom, so most of this guide is about checking your work before anyone else does.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -13,32 +13,32 @@ You need:
 - **Claude Code**, Antigravity, OpenCode, Codex or MiniMax Code, to try the skill itself.
 
 ```sh
-git clone https://github.com/wheresryan22/anatomy.git
-cd anatomy
+git clone https://github.com/julianolarteramos/specimen.git
+cd specimen
 ```
 
 To use your working copy as the skill while you change it, link it into your personal skills folder (move any installed copy out of the way first):
 
 ```sh
-ln -s "$PWD" ~/.claude/skills/anatomy
+ln -s "$PWD" ~/.claude/skills/specimen
 ```
 
 For Antigravity, for OpenCode, for Codex, or for MiniMax Code:
 
 ```sh
-ln -s "$PWD" ~/.gemini/antigravity/skills/anatomy
+ln -s "$PWD" ~/.gemini/antigravity/skills/specimen
 ```
 
 ```sh
-ln -s "$PWD" ~/.config/opencode/skills/anatomy
+ln -s "$PWD" ~/.config/opencode/skills/specimen
 ```
 
 ```sh
-ln -s "$PWD" ~/.agents/skills/anatomy
+ln -s "$PWD" ~/.agents/skills/specimen
 ```
 
 ```sh
-ln -s "$PWD" ~/.minimax/skills/anatomy
+ln -s "$PWD" ~/.minimax/skills/specimen
 ```
 
 ## Building the examples
@@ -56,11 +56,27 @@ node examples/ripple-tank/build.mjs
 node examples/ripple-tank/build.mjs --light
 node examples/raptor-engine/build.mjs
 node examples/raptor-engine/build.mjs --light
+node examples/push-button/build.mjs
+node examples/push-button/build.mjs --light
+node examples/heart/build.mjs
+node examples/heart/build.mjs --light
+for organ in kidney brain liver; do
+  node examples/$organ/build.mjs
+  node examples/$organ/build.mjs --light
+done
 ```
 
-The Raptor builds take a few minutes each; the rest take seconds. `examples/test-rig/` and `examples/spot-plate/` are React components with no build script.
+The organ pages ray-march their fields at build time: the heart takes several minutes per theme, the Raptor a few minutes, the rest take seconds to a minute. After rebuilding a light organ page, copy it into `docs/` (see "The demo site" below). `examples/test-rig/` and `examples/spot-plate/` are React components with no build script.
 
 After a build, `git status --short` must show nothing unless you meant to change a figure. CI runs exactly these commands and then `git diff --exit-code`.
+
+## The demo site
+
+`docs/` is the GitHub Pages site (Pages serves `main`, folder `/docs`). It holds `index.html` and a copy of each light organ page (`docs/heart.html`, `docs/kidney.html`, `docs/brain.html`, `docs/liver.html`). CI fails when a copy differs from `examples/<organ>/<organ>-light.html`, so refresh them after a rebuild:
+
+```sh
+for organ in heart kidney brain liver; do cp examples/$organ/$organ-light.html docs/$organ.html; done
+```
 
 ## The checks
 
@@ -72,9 +88,12 @@ Run the ones that match what you touched, and read every PNG they write: open it
 node --test scripts/drive.test.mjs
 ```
 
-**Geometry audit.** For figures with pipes, cables or round parts. It must end `audit passed`, with every failing line at 0.
+The whole suite is `node --test scripts/*.test.mjs`. The React tests need `react`, `react-dom`, `typescript` and `esbuild`; CI installs them into a temporary folder and points `NODE_PATH` at it (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+**Geometry audit.** For every organ (each view is audited in organic mode) and for figures with pipes, cables or round parts. It must end `audit passed`, with every failing line at 0.
 
 ```sh
+node examples/kidney/build.mjs --audit
 node examples/raptor-engine/build.mjs --audit
 ```
 
@@ -148,4 +167,4 @@ CI must pass before a merge.
 
 ## Reporting a bug or asking for a figure
 
-Use the [issue forms](https://github.com/wheresryan22/anatomy/issues/new/choose). For a figure that came out wrong, include the prompt, the theme, where the figure lives (HTML, SVG or React), and a screenshot or close-up of the fault.
+Use the [issue forms](https://github.com/julianolarteramos/specimen/issues/new/choose). For a figure that came out wrong, include the prompt, the theme, where the figure lives (HTML, SVG or React), and a screenshot or close-up of the fault.

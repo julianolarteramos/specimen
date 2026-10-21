@@ -2,3 +2,7 @@
 examples/**/*.html linguist-generated=true
 *.webp binary
 *.png binary
+docs/heart.html linguist-generated=true
+docs/kidney.html linguist-generated=true
+docs/brain.html linguist-generated=true
+docs/liver.html linguist-generated=true

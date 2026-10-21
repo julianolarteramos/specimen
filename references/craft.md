@@ -1,21 +1,113 @@
 # Craft
 
-How a figure comes to read as a crafted object rather than a diagram. Every rule here came from a figure that was rejected or approved by a demanding reviewer.
+How a figure comes to read as a real teaching specimen rather than a diagram, and how its mount and instruments read as crafted objects. Part I is the specimen doctrine; part II is Anatomy's machine craft, which still holds for everything around the specimen. Every rule came from a figure that a demanding reviewer rejected or approved.
 
 ## Contents
-1. What "crafted" means
-2. Anti-patterns
-3. Parts vocabulary, with recipes
-4. Tones
-5. Painter's order
-6. Camera and composition
-7. Themes
-8. Round parts and pipes
-9. Exploded views
-10. Screens and things on faces
-11. Shaders
+Part I. Specimens
+- I.1 What a good specimen is
+- I.2 Organ parts vocabulary
+- I.3 Building fields
+- I.4 Tissues and joins
+- I.5 Vessels on and out of an organ
+- I.6 Sections
+- I.7 Membranes
+- I.8 Pieces and painter's order
+- I.9 Views and motion
+- I.10 Anti-patterns seen in this fork
+Part II. Machines, mounts and instruments (from Anatomy)
+- II.What "crafted" means
+- II.Anti-patterns
+- II.Parts vocabulary, with recipes
+- II.Tones
+- II.Painter's order
+- II.Camera and composition
+- II.Themes
+- II.Round parts and pipes
+- II.Exploded views
+- II. Screens and things on faces
+- II. Shaders
 
-## 1. What "crafted" means
+# Part I. Specimens
+
+## I.1 What a good specimen is
+1. **It is that organ at a glance.** Its silhouette and two or three landmarks (an apex, an arch with three branches, a hilum, a lateral fissure) name it before anything is read.
+2. **True proportions and relations.** Sizes in mm as world units; which part lies in front, where each vessel enters, how thick each wall is. A teaching model simplifies surfaces and colours, never positions.
+3. **Parts a student must name.** Each lobe, chamber, groove and vessel is modelled where it is, with its own tissue; nothing is painted on.
+4. **A real mount.** A turned plinth and a rod into the posterior or inferior surface, a dish, a cradle: kit parts, audited, with the rod declared as a `blend` into the organ.
+5. **Calm truth in motion.** What moves follows a model (rate, timing), at a few percent of scale.
+
+## I.2 Organ parts vocabulary
+| Part | How to build it |
+|---|---|
+| Lobe, chamber, body | `B.ellipsoid` and `B.ball` along the organ's own axes (`axesOf`, an `along(from, to, side)` helper), blended with a large `k` (10–18 for heart chambers) so the surface turns smoothly and the bands follow it |
+| Apex, pole, tip | A ball blended into the lobe with a larger `k`, so the lobe tapers rather than ends |
+| Border, margin | Comes from the lobe's flattening (a thin third radius) and a crease-free blend; a sharp margin is a `B.intersect` with a large ellipsoid |
+| Groove, sulcus, fissure | A `B.carve` of a thin capsule chain that follows the surface (project its points onto the field, then sink them by half the radius); the groove's floor shades darker on its own |
+| Appendage (auricle, lobule) | A flattened lobe draped on the surface: a vessel chain projected onto the organ with a large radius and a small lift, tapering to its tip |
+| Hilum | A shallow carve where vessels enter, the vessels starting inside it |
+| Surface vessel (coronary, gastric) | A vessel chain on the surface, lifted by its radius, tapering monotonically, diving into the surface over its last tenth; a branch starts on its parent's centreline |
+| Great vessel leaving the specimen | `B.vessel` along a spline, `B.clip` flat at the end, bored with a lumen capsule (`carve`), coloured arterial or venous |
+| Cavity | An ellipsoid cutter inside the organ, its walls the organ's thickness minus the cavity |
+| Septum | What two cavities leave between them: carve one cavity by the neighbour's outer surface |
+| Valve leaflet | A thin flattened ellipsoid in the valve tissue, hinged at the orifice, visible through the section, with `cores` so its cut face keeps its colour |
+| Papillary muscle, chorda | A tapered capsule from the wall, a thin capsule to the leaflet |
+| Cortex and medulla | An outer field with `cores` that colour the cut face by region (pyramids inside the cortex) |
+| Membrane (pericardium, capsule) | `B.grow(organ, d)` clipped where vessels leave, drawn as a veil |
+
+## I.3 Building fields
+- One field per organ, one item per field, unless it must be split (I.8).
+- Mind the Lipschitz bound: balls, round cones, planes and the kit's ellipsoid bound are 1-Lipschitz, and so are smooth unions, carves and intersections of them. A hand-written `custom` field declares its `L`; the audit's `lipschitz` line catches a lie.
+- Every node carries a bounding sphere and rays cull subtrees: keep lists short (vessels are balanced trees already) and keep each field to a few thousand primitives.
+- Paint at `cell: 0.4` with `coarse: 2` for a final build (`0.7`, `3` while iterating); build views in parallel processes (`examples/heart/build.mjs`).
+
+## I.4 Tissues and joins
+- **Tokens, not colours.** Each tissue is `--tissue-<name>-0..4` in both themes, and `[data-tissue="<name>"]` maps them onto the kit's shade tokens. Keep tissues sober and close in luminance; colour is the subject only for blood (arterial red, venous blue) and the accent.
+- **Tones as veils.** With `tones: "overlay"`, tissues are flat layers and the four light bands are nested translucent veils over all of them: a join no longer multiplies band rings, and pages stay near 80 KB a view. The base tissue (`base`) fills the outline.
+- **The accent keeps its own tones.** Name it in `banded` (and in `quiet`, so it draws no creases). White veils over a saturated red wash it into a pale, striped ribbon; that was the coronaries' first look.
+- **Joins grade.** `mix: { pairs: [[a, b]], width, steps, bias }` grades two tissues over `width` units of distance difference in `steps` bands, `bias` pushing the change up the vessel so the organ colour runs over its fillet. A hard line at a vessel root reads as a pipe joint; three to four steps across eight or nine units read as one fused surface. A pair option `{ steps: 0, width: 0.3, bias: 0.05 }` keeps a crisp edge for a vessel that sits on the surface.
+
+## I.5 Vessels on and out of an organ
+- **Sample densely, never blend consecutive cones.** A chain of round cones is smooth only to first order; the tone bands step at every joint unless joints are close (0.4 units on a radius-13 vessel). Blending consecutive cones with `k` bulges every joint and scallops the bands: the cava looked like a stack of rings.
+- **Surface vessels sit on the surface.** Project the path onto the organ field (Newton on the field), lift each centre by its radius along the normal, taper the radius monotonically to the end and let the last tenth dive into the surface. Fuse with a small blend (0.7) and add the vessels last in the tree, after the great vessels, or a large outer blend grows a bulb where they meet the aorta.
+- **Origins are hidden or grown.** A coronary that rises out of a bare surface leaves a flat patch; start it under the auricle or out of its parent vessel.
+- **No contour along a vessel.** Depth jumps of one or two radii draw no line (`jump: 3.5`); the vessel reads from its own tones.
+- **Cut ends have lumens and a flat face** (`clip` + `carve` of a bore); the lumen shows its inner wall and its rim draws as a contour.
+
+## I.6 Sections
+- **Choose the real plane** (four-chamber, short axis, coronal) and put the cavities' centres on it (`onCut`) so the plane opens each one fully. Cavities take most of the section; walls keep their true ratio (left ventricle about three times the right).
+- **Keep what stands above.** Remove the region in front of the plane only below a height (`intersect(halfspace(o, −n), halfspace([0, 0, top], [0, 0, 1]))`, smoothed with `k`), so the arch and its branches stay attached through a clean horizontal cut; a cut that leaves them floating, or an irregular edge under them, reads as broken.
+- **The cut face is its own tissue** (`carve(..., { mat: "cut" })`, `banded`), with an endocardial rim from `cores` (the cavities grown by two units) and its valves' cross-sections from leaflet `cores`. It is flat, so it takes one tone; the rim and the outline give it its edge.
+- **Leave out what the section cannot show.** Thin surface vessels crossing the cut become red specks; drop them from the section field.
+
+## I.7 Membranes
+- A membrane is a veil: `B.grow(organ, 3–4)`, clipped where vessels pass, painted once and drawn with `B.veilSvg` as one tissue fill at an opacity of 0.25–0.4, one shine from the top light band and an outline. Put it after everything it covers (`bias: 1e4`) and declare `veil: { opacity }`: the audit leaves it out of depth order, cover and sunk pairs, and fails an opacity outside 0.08–0.55.
+- Never stack tone bands under a translucent layer twice: the veil has no bands of its own.
+
+## I.8 Pieces and painter's order
+- A field is one painter's item; if one part of it is in front of a neighbour and another behind, it interlocks. Split it (`B.split(root, seeds)`): the pieces meet on bisector planes, draw no outline or contour along them, and settle like any parts.
+- Choose the seeds so the cut face of the nearer piece faces away from the viewer; the other way, the nearer piece would have to be drawn first to hide its own cut face and the order closes into a cycle.
+- A rod into the organ (the mount) must enter where the organ's surface faces away from every view; test positions with `overlapsOf` across all azimuths before building (`examples/heart`, the post at l 10, a −10).
+
+## I.9 Views and motion
+- Rotation is a set of views at several azimuths, each built and audited, crossfading on one card; a section and a membrane are further views of the same card. The kit's projection is a mirror image of a right-handed world: check which side of the organ a view shows.
+- Motion is a pure function of time from the model, at a few percent of scale about the organ's centre, still under reduced motion, stopped offscreen.
+
+## I.10 Anti-patterns seen in this fork
+- A flat-sided cone for ventricles and a double tip where two cones ended: lobes are ellipsoids blended with a large `k`, with one apex ball.
+- A staircase of tones on the aorta and stripes on the cava: cone joints too far apart, and a blend between consecutive cones.
+- A grey patch of vessel colour on the ventricle: the vessel's buried base was the nearest primitive; start vessels at the surface and bias the join.
+- Joins with a straight cut where grey met pink: tissues without `mix`.
+- A pulmonary trunk like a pipe elbow of constant radius: thick at its base, short, splitting under the arch.
+- Coronaries like flat ribbons with jagged edges, a wedge at a branch, a bulb at the origin and a smear at the end: paths not on the surface, a branch starting beside its parent, a large blend with the aorta, and lift instead of taper at the end.
+- An auricle like a cone tip or a pale lens: draped lobes, not capsules standing off the surface.
+- A washed-out, striped accent under white veils, and a grey highlight on red: `banded` tissues keep their own tones.
+- A four-chamber section with small loose holes, an eye in the right ventricle, invisible valves, a single flat tone and red specks: large cavities on the plane, a septum carved by the neighbour, leaflets with `cores`, an endocardial rim, no surface vessels in the section.
+- Hairlines between tissue layers that abut: a base tissue that fills the whole outline under the others.
+- Pages of 750 KB: tone bands per tissue and uncompressed kit polylines.
+
+# Part II. Machines, mounts and instruments (from Anatomy)
+
+## II.1 What "crafted" means
 
 The approved figures share five qualities.
 
@@ -25,7 +117,7 @@ The approved figures share five qualities.
 4. **Calm.** Thin 0.6 px lines and a restrained palette. One lit accent tells the eye where to look. Motion is eased and slow enough to follow.
 5. **Truth.** The readout shows live, correct numbers, and the motion follows the real model: springs with real stiffness, true sizes and thresholds.
 
-## 2. Anti-patterns
+## II.2 Anti-patterns
 
 Reviewers rejected each of these, so don't do them:
 
@@ -38,15 +130,15 @@ Reviewers rejected each of these, so don't do them:
 - **Text in the drawing.** Allow at most one tiny engraved label (`FaceText` on a face). Everything else goes in the card corners, legend or caption.
 - **Copying a reference.** Take mood and finish from a reference, then invent the object.
 - **Raw pointer jumps.** Parts that snap to the cursor. Ease everything.
-- **Pipes through pipes.** On the first Raptor the owner zoomed in and found cables and lines passing through the main ducts and through each other, "which makes no sense". At 1× it looked fine. Every pipe and cable keeps clear of everything but its own connection, every crossing is drawn in true depth order, and `kit/audit.mjs` proves both (section 8, "Clearance and crossings").
-- **Textures that stop.** On the same close-up, rows of bolt dots on the chamber stopped dead in the middle of the surface, and the bell and throat were shaded as a staircase of flat tone blocks. Both read as broken. The owner's words: if a texture has to end, "we'd rather fade them out at the end than an instant stop". Shade curved surfaces smoothly, and make a texture end on a real edge or fade out (section 8, "Shading and textures on curved surfaces").
+- **Pipes through pipes.** On the first Raptor the owner zoomed in and found cables and lines passing through the main ducts and through each other, "which makes no sense". At 1× it looked fine. Every pipe and cable keeps clear of everything but its own connection, every crossing is drawn in true depth order, and `kit/audit.mjs` proves both (section II.8, "Clearance and crossings").
+- **Textures that stop.** On the same close-up, rows of bolt dots on the chamber stopped dead in the middle of the surface, and the bell and throat were shaded as a staircase of flat tone blocks. Both read as broken. The owner's words: if a texture has to end, "we'd rather fade them out at the end than an instant stop". Shade curved surfaces smoothly, and make a texture end on a real edge or fade out (section II.8, "Shading and textures on curved surfaces").
 - **Shaders that pop or are cut.** The first Raptor plume changed colour instantly between its phases, "as if cut out", and a glow ended in a straight line at the canvas edge. Every shader term rides an envelope and reaches zero before any bound (`webgl.md`, section 7).
 - **Textures that stop, on flat faces too.** The same fault came back on a later figure's boxes, where no curved-surface rule reached it: a tank's weld seam inset 6 units from each rounded corner, a manifold face line inset 4, a row of faint ticks floating on a bare bedplate with no ruler under them, cooling ribs that stopped 2 units short of the seam arcs at both ends, and a hose braid drawn as a dashed stroke down the centreline that ended in two straight hard edges along the hose and broke at every chunk joint. A seam on a box runs edge to edge round the visible corners (`k.sideSeam`), ribs end on seams at the same `s` (`ribsOf(…, { seams: true })`), ticks hang from a ruler strip's edge, and a texture on a pipe comes from `tubePieces(…, { rings })`. `node scripts/lines.mjs page.html` fails every line end that touches nothing (`verify.md`, "Line ends").
-- **Stand-in shapes.** To quiet the audit a builder recorded a 0.45-thick disc at the tip of each of five overlapping rod copies, and a sliver for a second rod that was drawn sunk into its cylinder head. The audit passed and said nothing about either rod, and the lit rod's outline was notched every 12 units while it moved. Record the true shape of what you draw; the audit's stand-in check fails an item whose recorded shapes cover less than 60% of its drawing. A rod that slides out of a gland is one rod (section 3, "Rod out of a gland").
-- **Dark-theme glows pasted on white.** The owner made light the shipping theme for every site figure, and seven shader figures built on a dark plate had to be converted. Taking a dark glow and darkening it gave "red ink smoke" (the Raptor's light plume). It also gave flames drawn as outlines, sparks that looked like dirt, salmon-coloured cooling glass, grey fades and cavities that got heavier as the fire went out. On paper, light reads through saturation and a darker physical ground (section 7, and `webgl.md`, section 8).
-- **Fixing one close-up by eye.** Tuning a painter's key or nudging a waypoint until one screenshot looks right breaks another frame or another theme. The Raptor's hand-set keys looked right at 1× and had 323 depth-order problems. Measure (section 8, "Clearance and crossings"), then look.
+- **Stand-in shapes.** To quiet the audit a builder recorded a 0.45-thick disc at the tip of each of five overlapping rod copies, and a sliver for a second rod that was drawn sunk into its cylinder head. The audit passed and said nothing about either rod, and the lit rod's outline was notched every 12 units while it moved. Record the true shape of what you draw; the audit's stand-in check fails an item whose recorded shapes cover less than 60% of its drawing. A rod that slides out of a gland is one rod (section II.3, "Rod out of a gland").
+- **Dark-theme glows pasted on white.** The owner made light the shipping theme for every site figure, and seven shader figures built on a dark plate had to be converted. Taking a dark glow and darkening it gave "red ink smoke" (the Raptor's light plume). It also gave flames drawn as outlines, sparks that looked like dirt, salmon-coloured cooling glass, grey fades and cavities that got heavier as the fire went out. On paper, light reads through saturation and a darker physical ground (section II.7, and `webgl.md`, section 8).
+- **Fixing one close-up by eye.** Tuning a painter's key or nudging a waypoint until one screenshot looks right breaks another frame or another theme. The Raptor's hand-set keys looked right at 1× and had 323 depth-order problems. Measure (section II.8, "Clearance and crossings"), then look.
 
-## 3. Parts vocabulary, with recipes
+## II.3 Parts vocabulary, with recipes
 
 `P` is the projection and `k` is the kit, as in `import * as k from "./iso-kit"`. Heights are in world units, with z up. Draw each recipe's solids in the order listed.
 
@@ -165,7 +257,7 @@ k.dotGrid(x, y, cols, rows, gap, zTop, P) → dotsSvg(points, { size: .45, tone:
 ### Lamp, probe and finger
 These are stacks of cylinders: housing, cap ring, collar, stem, pad. Seam rings come from `sideArc`, and the lock screw is a small slab plus a cylinder head on the side.
 
-## 4. Tones
+## II.4 Tones
 
 | Element | Tone |
 |---|---|
@@ -182,7 +274,7 @@ These are stacks of cylinders: housing, cap ring, collar, stem, pad. Seam rings 
 
 A `Solid` with `lit` gets a white edge and a lighter top. Use it for the moving subject, the plunger or a picked drawer.
 
-## 5. Painter's order
+## II.5 Painter's order
 
 - Draw the base first, then everything resting on it.
 - Within a level, sort by `depthOf(centre, P)`, ascending: far before near.
@@ -194,14 +286,14 @@ A `Solid` with `lit` gets a white edge and a lighter top. Use it for the moving 
 - **Dense figures settle their keys from geometry.** Past a few dozen overlapping parts, hand-set biases fight each other. Give every item its true shape and let `kit/audit.mjs` measure which surface is nearer wherever two items overlap, then `orderKeys` raises each key just enough to satisfy every pair (`kit.md`, section 12). What it can't satisfy is a pair that interlocks, which needs a split. The first Raptor's hand-set keys left 190 pairs drawn the wrong way round assembled and 133 apart; measured keys took both to zero.
 - **Crossings sort per chunk.** A pipe or cable is drawn as `tubePieces` chunks, each its own item at its own depth, so one line can pass in front of one part and behind the next. Where two lines cross on screen, the chunk nearer the camera is drawn later; a crossing can only be ordered if neither chunk also runs behind the other somewhere else, so break long chunks at a crossing (`breaks`).
 
-## 6. Camera and composition
+## II.6 Camera and composition
 
 - Default camera: azimuth 45°, elevation 30°. Rotate the azimuth (35–60°) so the face that carries the mechanism points at the viewer. The test rig uses 57° to show the long side. Raise the elevation to look into something open: the ripple tank uses 44° so the water surface and the paper under the tank both read.
 - Fit with `fitProjection(boxCorners(...) ∪ tallest points, width, height, { pad: 24–34, azimuth })`. Typical viewBoxes are 600 × 340–380.
 - The object fills about 55–65% of the card. Leave air around it, don't let it touch the corner labels, and keep sizes consistent across a set of figures.
 - On phones (390 px), check it still reads. If parts get too small, scale the SVG up to about 110–118% inside a card with `overflow: hidden` and a negative margin, as `stretch.css` does in the test-rig example.
 
-## 7. Themes
+## II.7 Themes
 
 `ISO_CSS` defines tokens on `.iso`, with dark as the default and `.iso[data-theme="light"]` for light. Every fill and stroke reads a token, so a theme is just a token set. To tune one:
 
@@ -216,7 +308,7 @@ A `Solid` with `lit` gets a white edge and a lighter top. Use it for the moving 
 - **Mind nested themes.** A dark plate can sit on a light page. A rule written `.iso:not([data-theme="dark"]) .x` also matches through the page around it. Order the dark rule after the light one, or key on the plate's own theme.
 - **Opacity fades a pale colour to grey.** Anything that fades by opacity in light (a fallback glow, a lit accent) gets a saturated token, and its tints are multiply-blended so the lines under them stay visible.
 
-## 8. Round parts and pipes
+## II.8 Round parts and pipes
 
 Engines, pumps, valves, lamps and instruments are mostly turned parts and pipes. `kit/lathe.mjs` and `kit/tube.mjs` build them along any axis (`references/kit.md`, sections 10 and 11). `examples/raptor-engine/build.mjs` has every recipe below in working form.
 
@@ -302,7 +394,7 @@ Cables are the easiest way to ruin a figure: a cable drawn across the subject's 
 - **Ends land.** Each cable starts at a connector on the controller or a junction box and ends on a plug, sensor tip, valve lid or bulkhead connector, never on a clamp or in the air beside the bundle. An end that stays with its own assembly gets a terminal dot; an end on another assembly gets a connector shell (`cable(..., { shells: [false, true] })`) that moves with the cable.
 - **Count what you draw.** Push every route into a list (`CABLES`) and build the readout from its length. The first Raptor readout claimed 8 cables while 11 were drawn.
 
-## 9. Exploded views
+## II.9 Exploded views
 An exploded view earns its place when the parts are the explanation (what feeds what, in what order):
 - Choose the assemblies the real thing comes apart into (the Raptor has 11), not single solids.
 - Move each assembly along its real disassembly direction, far enough that its silhouette clears its neighbours: down along the axis for stacked stages, out radially for side units.
@@ -312,7 +404,7 @@ An exploded view earns its place when the parts are the explanation (what feeds 
 - List the assemblies in the legend as numbered buttons (`01 Gimbal and thrust puck`…) that select, the same as hovering does.
 - Springs, staggering and per-frame depth re-sorting are in `references/motion.md`.
 
-## 10. Screens and things on faces
+## II.10 Screens and things on faces
 A screen, a dial face or a display is drawn in the plane of the face it sits on (`examples/desk-computer/`):
 - **The face plane.** `sideMatrix([0, y], 0, P, "left")` maps a group's local `(x, −z)` coordinates onto the vertical face at `y`. Draw everything on the screen (the glow, scanlines, a mark, `<text>` and a cursor) in those flat coordinates inside that `<g transform>`.
 - **A recess.** Clip the screen to its rounded outline with a `clipPath` in the same plane, and draw the recess's inner sides as quads between the face and the face moved `depth` back. Shade the sides by facing (tops `iso-top`, sides by shade). Draw the outline `lo` on the face and `faint` at the back.
@@ -320,5 +412,5 @@ A screen, a dial face or a display is drawn in the plane of the face it sits on 
 - **Text the machine displays** (a typed line, a counter's digits) is part of the object, not a label, so the one-label rule doesn't apply. Keep it in the screen's own type and size, and fit it: the cap height is about 0.55 of the window's height and the widest string you will ever show (`8.88`, the longest unit) must fit its width with a margin of about a tenth of the height. Clip it to the window like any screen. A blind-test flow meter set 5.6 px digits in a 12.8 × 8 window, so the leading digit crossed the window's left border and the digit tops ran into the unit label.
 - **Content seen through an opening** (a sight glass, a gauge window, a recess) sits behind the face, so draw the opening's inner walls between the face and the back plane, shaded by facing, and clip the content to the opening in the face plane as well as its own. A strip of bare face inside the opening reads as a hole drawn on the surface. For a shader behind an opening, `webgl.md`, section 5.
 
-## 11. Shaders
+## II.11 Shaders
 Some subjects can't be drawn with lines: fire, exhaust, water, caustics, real lamp light, steam. These go in a WebGL layer *inside* the drawing, in world space and in the same camera, between a back SVG and a front SVG. `references/webgl.md` has the layer stack, the camera contract, the craft rules (nothing pops, no hard cut-offs, tonemap and dither, blending per theme) and how to verify them. Everything in this page still applies to the SVG around the effect. Its section 8 covers the light theme, which ships: inks solved from the colour the paper should show, ink that grows with the light, a dark physical ground for every glow, recipes for hot metal, glass, sparks, flame, steam, plasma and Cherenkov light, and a no-WebGL fallback that matches the shader.

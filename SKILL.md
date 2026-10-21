@@ -1,79 +1,53 @@
 ---
-name: anatomy
-description: Build crafted, highly detailed, interactive isometric SVG figures that explain a technical idea as a real physical object (a test rig, a dial gauge, a cabinet of drawers, a plotter, a lock), with many small precise solid parts, four-tone shading, correct painter's order, a framed card with title, hint and live readout, and calm eased motion. Use this whenever someone wants an isometric illustration, an explanatory diagram or figure for docs, a blog post, a landing page or an article, a "Linear-style" or "premium" technical drawing, an interactive explainer, or an SVG that shows how a system, algorithm or component works, even if they never say "isometric". Works framework-free (TypeScript/JS that writes SVG and HTML) and in React/Next.js, and can add realistic WebGL shaders (fire, exhaust, water, caustics, lamp light) that live inside the drawing in the same isometric perspective. Also prints a figure as an A4 PDF (poster, drawing or handout) and publishes it to the Anatomy community gallery when asked.
+name: specimen
+description: Build crafted, interactive isometric SVG figures of anatomy as a real teaching object (a classroom heart model on a turned plinth, a kidney cut open beside its adrenal gland, a brain hemisphere with its sulci, a liver with its vessels), with organs and vessels drawn from smooth distance fields, four-tone shading, tissue colours, cuts, translucent membranes, correct painter's order, a framed card with title, hint and live readout, and calm motion from a true model. Use it whenever someone wants an anatomical illustration, an organ or system diagram for a class, a slide, docs or an article, an explanatory figure of physiology (a heartbeat, blood flow, a hormone path), or an interactive explainer of the body, even if they never say "isometric". It keeps the anatomy kit's machine parts (stands, instruments, pipes) for the objects around the specimen. Framework-free (Node scripts that write SVG and HTML) or React/Next.js; WebGL optional.
 license: MIT
 compatibility: Written for Claude Code; also runs in Antigravity, OpenCode, Codex and MiniMax Code. Needs Node.js 20.10+, and Chrome or Chromium for the checks.
 metadata:
   opencode/slash: "true"
 ---
 
-# Anatomy
+# Specimen
 
-This skill makes figures like a small instrument on a bench: a heavy base on feet, rails with tick rulers, a carriage on bushings, knurled knobs, coil springs, a dial gauge whose needle moves, screws as tiny dots. The reader understands the idea because they recognise the machine. Every number the figure shows comes from the same model that moves its parts.
+Specimen is a fork of Anatomy (MIT, Ryan) for the body. Its figures look like a good teaching model on a bench: an organ made of smooth fused lobes and vessels, painted in sober tissue colours, standing on a turned plinth on a rod, turning through a few audited views, opened along a real anatomical plane or seen through a translucent membrane. The reader understands the physiology because they recognise the organ and can follow its parts. Every number the figure shows comes from the same model that moves it.
 
-Several complete examples ship with the skill. Open the closest one before you start. Each framework-free example is built with `node examples/<name>/build.mjs`, which writes a standalone HTML page next to the script; add `--light` for the light theme.
+Open the closest example before you start. Each is built with `node examples/<name>/build.mjs` (add `--light` for the light theme, which ships, and `--audit` to prove the geometry).
 
-- `examples/dial-indicator/` is the smallest: a dial gauge on a stand, about 300 lines in all.
-- `examples/desk-computer/` is framework-free SVG: a desk computer with a keyboard you can type on. The typed line appears on a CRT screen drawn in the plane of the case front, and the picture collapses to a line and a dot when you switch it off. It has about 85 solids and 850 paths.
-- `examples/arcade-cabinet/` is an upright arcade cabinet with its side panel off, a Hero of about 240 solids and 15 cables. A quarter flies into the slot, rolls down the coin chute at the speed a rolling disc reaches on a 30° slope, trips the coin-switch wire and drops into the cash box; the switch's pulse runs chunk by chunk along its cable to the board, and the CRT warms up, self-tests and runs an attract mode drawn in the plane of the tilted monitor. The stick tilts and closes a microswitch under the panel. It shows how to place a camera so a cutaway's mechanism stays in view, a concave board drawn as a prism along any axis, moving parts rebuilt in the page from the same module the build uses, and live coins and a wire drawn in reserved slots of the settled order. `node build.mjs --audit` proves the geometry.
-- `examples/raptor-engine/` is a rocket engine hanging in a test stand. Its round parts come from `kit/lathe.mjs` and its pipes and harness from `kit/tube.mjs`. It comes apart into 11 assemblies with staggered springs and per-frame depth re-sorting. Every part records its true shape, and `node build.mjs --audit` (`kit/audit.mjs`) proves, at rest, apart and in every replayed frame of the explode, that nothing passes through anything, that every end sits on a real mount, that no bend pinches, folds or lands on another line, that no curved profile's slope wobbles, and that every overlap is drawn in depth order. A WebGL plume, shock, splash and steam render between the back and front SVG. It is the reference for dense pipework, smooth shading and fades.
-- `examples/ripple-tank/` is a school ripple tank on tall legs over a paper screen, seen from 44° up. Two WebGL layers (lamp light, shadows and caustics on the paper, and the water's reflections and glass) are registered to the isometric planes and driven by a pure dispersion and optics model (`model.mjs`); a frequency change travels out from the dippers through a history texture.
-- `examples/test-rig/` is a production figure from a real site (React/Next): a glass button on a spring-mounted carriage, a finger probe on a rail that presses and pulls, and a dial gauge reading the lean. It has 53 solids and about 470 paths.
-- `examples/spot-plate/` is a second production figure from the same site: six pairs of glass drops on a spot plate, each pair drawn from one distance field, so a pair closer than `merge` runs together into one piece of glass. A fan of feeler blades sets `merge`, one blade per gap. It is the reference for shapes that morph into each other and for one control driving many parts.
-
-The test rig is the quality bar for the drawing itself. The Raptor is the bar for shader work: a WebGL effect has to reach its standard of world-space, no-pop, seamless rendering.
+- `examples/heart/` is the reference: one distance field with chambers, draped auricles, the great vessels with cut ends and lumens, and coronary arteries fused on the surface, in four tissues with graded joins. Four views at different azimuths, a four-chamber section and a view through the pericardium crossfade on one card; a pure model drives a calm heartbeat and the bpm readout. Every view is audited in organic mode.
+- `examples/kidney/`, `examples/brain/` and `examples/liver/` are the organ set: a kidney opened on its coronal plane beside its adrenal gland (cortex, medulla, pyramids, pelvis, hilum vessels), a brain hemisphere with gyri and sulci carved into its surface, and a liver with its lobes, gallbladder and the vessels at its hilum.
+- The anatomy examples (`dial-indicator`, `desk-computer`, `arcade-cabinet`, `raptor-engine`, `ripple-tank`, `test-rig`, `spot-plate`) stay as the reference for the machine parts a specimen stands on and the instruments around it.
 
 ## The one idea that matters
 
-**The object is the explanation.** Don't draw boxes, arrows and labels. Invent a real, well-made physical thing whose working *is* the concept. Here is how earlier figures mapped:
+**The specimen is the explanation.** Don't draw a textbook diagram with arrows and labels. Build the real thing a teacher would put on the desk: a model of the organ, at true proportions, with the parts a student must name, mounted the way such models are mounted. The concept is carried by the anatomy itself and by what the figure does: the heart beats at the rate in the readout, the section shows why the left ventricle wall is thicker, the membrane shows what holds the heart.
 
-| Concept | Object |
+| Idea | Specimen |
 |---|---|
-| One shared GPU context serving many canvases | A gantry plotter: one print head visiting 16 wells |
-| A cache key that skips work when nothing changed | A pin-tumbler lock: when every pin matches, the plug turns and nothing is redrawn |
-| Seven render targets with different bytes per texel | A chest of seven drawers, each as deep as its bytes |
-| A separable blur (49 × 49 taps vs 49 + 49) | A bed-of-nails stamp beside two combs on rails |
-| A spring that presses and leans | A test rig with springs, a probe and a dial gauge |
-| A height profile | A profile (contour) gauge pressed against the edge |
-| Light that depends on facing | A small photo studio: key and fill lamps around a turntable |
+| Two circuits, one pump | A heart model with the aorta and pulmonary trunk leaving it, arteries and veins in their own tissue colours |
+| Why the left ventricle works harder | The same heart opened along the four-chamber plane, its thick left wall beside the thin right one |
+| Filtering blood into urine | A kidney opened on its coronal plane: cortex, medullary pyramids, calyces, pelvis, ureter, renal artery and vein |
+| A stress response | The adrenal gland on the kidney's pole, cut to show cortex and medulla |
+| Surface area folded into a skull | A brain hemisphere with deep sulci, the central sulcus and the lateral fissure |
 
 Two ways this fails, both seen in practice:
 
-- **Too abstract.** Stacked plates, floating slabs or labelled boxes don't read as anything.
-- **Too flat and bland.** One big slab with a few lines on it has no volume, no parts and nothing to discover.
+- **A machine with organ names.** Prisms, cylinders and tubes with flanges, glued together, read as plumbing, not as an organ. Organs come from smooth fused fields (`kit/blob.mjs`), never from the lathe and tube parts.
+- **A blob.** One smooth shape with a colour and a label teaches nothing. Every organ is built from its real parts (lobes, chambers, grooves, hila, vessels with cut ends), each where it belongs.
 
-The fix for both is the same: a recognisable machine, built from many small, precise, purposeful parts.
-
-**Every creation is highly detailed.** This holds for every figure, however small the idea or the request: a quick explainer is still a dense, real machine, never a few slabs. What scales with the size (workflow step 1) is how far you push it: a Figure gets the 4× sweep over its subject and mechanism, a Hero or an Epic over the whole drawing.
-- **Read the real thing.** Build it the way the real object is built: every screw, seam, bevel, bushing, label plate, cable with its connector, scale with its ticks, and the parts that hold the parts.
-- **Two looks.** At 1× it reads as one clear machine. At 4× every region still has something true to find; a bare face or an empty corner is unfinished work, not calm.
-- **Purposeful, never noise.** Detail comes from parts that belong to the mechanism. Each one sits on another part, ends on an edge, and fades rather than stops.
-- **Check it last.** Before you finish, zoom to 4× (over the subject and mechanism for a Figure, the whole drawing for a Hero or an Epic) and add the real parts that are missing wherever a region is plain.
+**Every specimen is detailed and true.** At 1× it reads at once as that organ, from its silhouette and its few landmarks. At 4× every region still has something true: a groove with its vessel, a vessel's cut end with its lumen, a fissure, the seam where two tissues meet. Proportions and positions come from anatomy (sizes in mm as world units, the apex where the apex is), never from what was easy to model. Be honest about what a model simplifies, and say it in the caption.
 
 ## Workflow
 
-Work in this order. Write the concept and the parts list before any geometry. Most of the quality is decided there.
-
-1. **Size it before you start.** Name the size before any other work, and tell the user roughly how long it will take when the tier below calls for an estimate.
-   - **Figure**: one mechanism, 40–80 parts, SVG with at most one WebGL layer. Name the size and build it without asking. Do not quote a time to the user, since a Figure often finishes in well under an hour. For the progress checks below, budget up to an hour.
-   - **Hero**: a dense object or several WebGL layers, 80–150 parts. About 2–4 hours. Say so, then build it unless the user asked for something quick.
-   - **Epic**: a whole vehicle, building or plant with many moving systems. 6 hours or more. Do not start it. Give the estimate, propose a Hero version that keeps the core of the idea, and list what the full version would add. Build the Epic only when the user chooses it.
-   - Whatever the size, have a working page that opens in the browser within the first hour, and deepen it from there. Run `date` at the start and at each step, and when a step runs past twice its share of the estimate, tell the user where it stands and what is left.
-2. **Truth first.** Collect the real numbers and behaviour of the thing being explained: sizes, counts, thresholds, curves. The readout, motion and caption must all be true. If you can, write the model as a small pure module, like `rig.ts` in the test-rig example, and drive everything from it.
-3. **Invent the object.** Pick a machine, tool, instrument or piece of furniture whose mechanism maps one-to-one onto the concept. Say in one sentence what moves and what that motion means. Never copy a reference image: take its finish, not its object.
-4. **Parts list.** Write at least 40 parts (40–80 for a Figure, 80–150 for a Hero, more for an Epic), grouped: base (plate, feet, groove, corner screws, label plate, ruler strip), structure (posts, rails, frame bars, end stops), mechanism (carriage, bushings, springs, plunger, needle), controls (knurled knob, thumb screw, crown) and the subject itself, which is the one lit part. Each part sits on another part. `references/craft.md` has a vocabulary of parts with recipes.
-5. **Plan the world.** Use world units of about 1 px of the real thing: x and y on the floor, z up. Lay out plans as rounded rectangles `{x, y, w, d, r}` and circles. Choose the camera: azimuth 45° by default, 35–60° to show the long side, elevation 30° (higher, like the ripple tank's 44°, to look into something open). Then fit with `fitProjection(points, width, height, { pad, azimuth })`.
-6. **Build geometry once.** Precompute every static path in a geometry module with the kit: `slabOf`, `cylinder`, `extrude`, `planOutline`, `topTicks`, `knurl`, `coil`, `radialTicks` and so on. Round parts on any axis (bells, flanges, valves, actuators) come from `kit/lathe.mjs`, and pipes and cables from `kit/tube.mjs`. Moving parts are built once at a rest position and moved with `translateAlong`. Only parts whose shape changes are rebuilt per frame.
-7. **Paint back to front, bottom to top.** Sort repeated parts with `depthOf`. Split anything that wraps another part into a back half and a front half: the springs around a rod, the bars of a frame around a carriage. A moving part is drawn in the slot where it physically sits. See "Painter's order" in `references/craft.md`. Once a figure has pipes, cables and round parts, stop tuning keys by eye: record each item's shape as you put it into `A.recorder(P, { order, spring })`, let `A.settle(R, P)` measure true depth wherever two items overlap and set the keys, and end the build with `A.auditOrExit(R, P)`. Route pipes before you draw them: real ports at both ends, legs along the structure, crossings on straights, collars gapping the pipe (`references/craft.md`, section 8). Record the true shape of what you draw: a stand-in shape that silences the audit is a bug, and the audit fails one. A rod that slides out of a gland is one rod from `G.rodOut`, recorded with `A.slide`.
-8. **Frame it.** Put the figure in a card: `Fig n` at top left, a short title at top right, the interaction hint at bottom left and the live readout at bottom right. Legend keys and a true caption go under the card, and words stay out of the drawing apart from at most one tiny engraved label.
-9. **Make it live.** Use calm time-based motion: exponential follow or real springs. An idle tour loops when nobody touches it. The figure responds to pointer and keyboard, stops when offscreen, and goes still under reduced motion. Write attributes on refs and don't re-render per frame. See `references/motion.md`.
-10. **Verify like a critic.** The owner finds faults by zooming in, so you zoom in first. Read every PNG you make.
-   - Capture desktop, phone (390 wide), hover and several moments of motion with `scripts/capture.mjs`; use `scripts/drive.mjs` for sequences, the apart pose and the `--no-webgl` fallback.
-   - **Run the audit to zero.** With pipes, cables or round parts, `node build.mjs --audit` must end `audit passed`, every failing line at 0: clearance at rest, apart and in mid-flight, terminals, loose ends, folds, self-overlap, crowding (against slender solids too), stand-in shapes, support, wobble, saddles and depth order. Fix an interlock in the geometry, never with a key bias.
-   - **Run the line check to zero.** The audit never sees line markup. `node scripts/lines.mjs page.html --out shots/lines.png` (and on the `-light` page, and in every resting pose with `drive.mjs`'s `["lines"]` action) must print `line ends: 0`: every seam, rule, rib, tick and pointer ends on a stroke, a dot or an outline. Read the ringed PNG.
-   - **4× close-ups of every junction in both themes** (build `--light` too), assembled and apart: every flange, tee, elbow, clamp, valve, bellows, band, saddle, ball joint and crossing, every curved body (no tone staircase), every place a texture ends (on an edge or fading), flat box faces with their seams, every textured hose at a chunk joint, every sliding rod at rest and at full stroke, and every window with text or shader content in it.
-   - **Shaders:** a contact sheet slowed with `["slow", 0.05]` across every transition; nothing pops, no colour switch, edges read 0. In light, also log ink per frame through each transition (it must follow the light monotonically) and crop where the ink meets strokes at 8–16× (`references/verify.md`, "Light-theme shaders").
-   - Put your PNG next to the examples and ask: is it instantly a real object, rich in small parts with volume, with every line ending on something? Is it highly detailed at 1× and still rewarding at 4×, with no bare face or empty corner? Iterate until yes. Checklist: `references/verify.md`.
+1. **Size it.** A Figure is one organ in one or two views (about an hour or two of build and check). A Hero is one organ with several views, a section and a membrane, or two organs together (3–6 hours). An Epic is a whole system (a torso, the circulation): give the estimate, propose a Hero, and wait.
+2. **Truth first.** Collect real dimensions and relations: lengths and radii in mm, wall thicknesses, which structure lies in front, where vessels enter, the rate or flow the readout will show. Write the behaviour as a small pure module (`examples/heart/model.mjs`).
+3. **Choose the specimen and its mount.** A classroom model on a turned plinth and rod, a dish, a cradle: something real that holds the organ. Choose the anatomical frame (left, anterior, superior) and the view that teaches most; the kit's projection is mirrored, so check the side you see.
+4. **Parts list.** Write the organ's parts as an anatomist would: lobes or chambers, borders and surfaces, grooves, hila, each vessel and what it enters, cut ends, and the inner parts a section will show. For each, the primitive that makes it and its tissue.
+5. **Build the field.** One field per organ (`B.field`). Lobes are ellipsoids and balls blended with large `k`; vessels are `B.vessel` chains sampled every 0.4–0.8 units, cut with `B.clip` and bored with a lumen; surface vessels follow the organ (project the path onto the surface and lift it by its radius); grooves are `B.carve`s of thin capsules along the surface. Graded joins between tissues come from `mix`. The mount is kit parts (`G.solidOf`, `G.disc`) recorded with the audit; the rod enters the organ as a declared `blend`.
+6. **Paint and record.** `B.paint(F, P, { tones: "overlay", base, banded })` and `B.fieldSvg(...)`; record `A.field(F)` for the organ and the kit shapes for the mount, `A.settle`, and audit with `{ organic: true }`. A view is a camera azimuth; generate several and audit each.
+7. **Sections, membranes, pieces.** A section is a `carve` by `halfspace`s with a cut-face tissue, cavities and walls modelled inside, and `cores` that colour the cut face (endocardium, medulla). A membrane is a veil: its own field (`B.grow` of the organ), drawn last with `B.veilSvg`, declared `veil: { opacity }`. A field that must pass in front of one part and behind another is split (`B.split`) into pieces whose cut faces face away from the viewer.
+8. **Frame it.** The card: `Fig n`, a short title, the hint and the live readout. Legend keys and a true caption under it; no labels in the drawing.
+9. **Make it live, calmly.** Motion comes from the model (a beat is a scale of a few percent with systole and diastole timed right), views crossfade, reduced motion goes still, offscreen stops.
+10. **Verify like a critic.** `--audit` ends `audit passed` on every view; `scripts/lines.mjs` prints `line ends: 0` on every view in both themes; captures at 1920, 1280 and 390, and 4× close-ups of every junction, vessel origin, cut end, groove and tissue join. Read every PNG. Ask: is it instantly that organ, are its proportions right, does every vessel end on something or in a cut with a lumen, is there a tone staircase, a scalloped band, a washed-out accent, a flat patch, a line that stops in mid-air?
 
 ## Setup
 
@@ -89,7 +63,7 @@ The kit is in `kit/`:
 | `kit/lathe.mjs` | Round parts along any axis: `frameAlong`, `lathe` (smooth shading switches on by itself for any profile with a smooth knot), `solidOf`, `disc`, `ringBand`, `sphereOf`, `saddleOf`, `bandsOf` (one curved body cut into depth-sortable bands that share one surface, with one outline from `sidesOf`), visible arcs, ribs and bolt circles on round surfaces (`ribsOf` and `dotsOf` take `fade`, `ribsOf` takes `seams`), `rodOut` for a rod that slides out of a gland, and `fillet` for pipe routes. |
 | `kit/tube.mjs` | `tubePieces` splits a 3D pipe or cable into depth-sortable chunks (with `breaks`, `gaps` under collars and clamps, elliptical end caps, and `rings` for a braid, corrugation or wrap that follows the cross-section through every joint), and `tubeSvg` draws one; `crossingsOf` finds where a route passes through a clamp, `runsOf` the drawn runs. Its `.tb-*` fills are in `ISO_CSS`. |
 | `kit/audit.mjs` | Proves the geometry. `recorder(P, { order, spring })` collects items, shapes (turned bodies, slabs, prisms, boxes, balls, tubes, pads cut by their host) and routes as the helpers draw them; `settle(R, P)` ray-casts every overlapping pair for true depth, at rest, apart and in the replayed explode, and sets the painter's keys (`overlapsOf`, `orderKeys`); `auditOrExit(R, P)` is the `--audit` hook that runs every check (`clearances`, `solidClearances`, `terminals`, `looseEnds`, `supports`, `folds`, `selfOverlaps`, `crowding` with slender solids as lines, `coverage` for stand-in shapes, `wobble`, `seats`, `depthOrder`) and exits non-zero on any problem. `A.slide` records a rod that slides out of a gland. `references/kit.md`, section 12. |
-| `kit/blob.mjs` | Organic parts: signed distance fields of balls, ellipsoids, round cones and vessels, smooth-blended, carved and clipped, ray-marched at build time into seamless four-tone solids with tissue layers (`field`, `paint`, `fieldSvg`). Audit them with `A.field` and `{ organic: true }`. |
+| `kit/blob.mjs` | The specimen core. Organic parts: signed distance fields of balls, ellipsoids, round cones and vessels, smooth-blended, carved and clipped, ray-marched at build time into seamless four-tone solids with tissue layers (`field`, `paint`, `fieldSvg`). Audit them with `A.field` and `{ organic: true }`. |
 | `kit/gl.mjs` | The WebGL layer for shaders inside the drawing: `GLSL_ISO` (the camera in GLSL, including `rayOf` and `pixelOf`), `glCamera(P)`, `glLayer(...)`, and the JS envelopes `smooth`, `burst` and `settle`. |
 | `scripts/capture.mjs` | Headless Chrome screenshots, close-ups and console checks, with WebGL on. Run with `node`. |
 | `scripts/drive.mjs` | Scripted headless Chrome with WebGL: move, click, key, slow motion, wait-until, eval, shots and contact sheets that catch pops; `--no-webgl` and `--preload`. |
@@ -104,7 +78,19 @@ Pick the path that fits the project:
 
 ## Craft rules (short form)
 
-These are the rules that separate a crafted figure from a diagram. `references/craft.md` gives the full reasoning and recipes.
+Organs (`references/craft.md`, part I):
+
+- **Fields, not parts.** An organ is one field of fused primitives; separate solids sunk into each other are never an organ.
+- **Proportions are anatomy.** Sizes in mm, landmarks where they are; the model may simplify, never relocate.
+- **Tissues are sober, one accent.** Each tissue is a five-step token ramp (`--tissue-<name>-0..4`); muscle, arterial and venous blood, gland, fat, cut face, valve. One accent (the structure the reader should follow) keeps its own tones (`banded`), saturated in both themes.
+- **Joins grade.** Where two tissues fuse, `mix` grades them over a band of distance; a hard line at a vessel's root reads as a pipe joint.
+- **Vessels are tubes, sampled densely.** Union consecutive cones without smoothing (a blend between them bulges every joint and scallops the tone bands); sample a large vessel every 0.4 units. Surface vessels sit on the surface lifted by their radius, taper monotonically and dive into the surface where they end; their origin is hidden under a lobe or rises out of its parent, never a flat patch.
+- **Cut ends have lumens.** A vessel that leaves the specimen ends in a flat cut with a bored lumen.
+- **Sections are planes through every chamber.** Cavities fill most of the section; walls have their true relative thickness; the cut face has its own tissue, a darker endocardial rim from `cores`, and a clear edge.
+- **Membranes are veils.** One tissue, one shine, one outline, an opacity between 0.08 and 0.55, drawn last.
+- **Inner contours fade.** Depth jumps under a few units draw no line; the rest snap to the outline or fade where they end.
+
+Mounts and instruments keep the machine rules of Anatomy (part II of `references/craft.md`):
 
 - **Solids, not wireframes.** Every part is filled in paper colour and painted in order, so things in front hide things behind. No see-through edges and no dashed hidden lines.
 - **Let the kit shade.** `extrude` returns four side tones by facing plus a lighter top. Keep it for anything with height, and use `flat` only for floors and inlays thinner than 1 unit.
@@ -140,10 +126,6 @@ Use a shader only for what lines can't draw: fire and exhaust, water and caustic
 
 Read `references/webgl.md` before writing any shader.
 
-## Organic parts (specimen fork)
-
-Organs, vessels and other soft shapes that no prism, lathe or tube can make come from `kit/blob.mjs`: one signed distance field per organ (`B.blend(k, B.ellipsoid(...), B.capsule(...), B.vessel(points, r))`, `B.carve`, `B.clip` for cut vessel ends with a lumen), with a `mat` per primitive and `mix` for graded tissue joins. `B.paint(F, P)` ray-marches it at build time and `B.fieldSvg(painted, { tissue })` draws it as seamless kit solids; map tissue tokens in page CSS (`--tissue-<name>-0..4`). Record it with `A.field(F)` and audit with `{ organic: true }`. Fuse vessels and surface arteries into the same field rather than sinking separate parts into it. Rotation is a set of pre-generated views at several azimuths, each audited, with a crossfade. `examples/heart/` is the reference.
-
 ## Printable sheets (A4)
 
 When the user wants the figure on paper (a handout, a poster, a PDF, an A4 or Letter sheet), print it from the finished figure instead of drawing again. Write a `sheet.mjs` next to the build: the poses to capture as `drive.mjs` actions, the parts as CSS selectors over the live SVG, and the words, every one of them true to the model. Then run `node scripts/print.mjs sheet.mjs --format all --png` and read every page.
@@ -158,7 +140,7 @@ Offer all three when the user hasn't picked one. When the page shows a figure th
 
 Read these as you need them:
 
-- `references/craft.md`: the look in depth, including the parts vocabulary with code, tone tables, painter's order patterns, round parts, pipes and harnesses, exploded views, screens on faces, and the anti-patterns that got figures rejected. Read it before designing.
+- `references/craft.md`: part I is the specimen doctrine (what a good specimen is, the organ parts vocabulary, fields, tissues and joins, vessels, sections, membranes, pieces, views, and the anti-patterns found in this fork); part II is the machine craft for mounts and instruments, including the parts vocabulary with code, tone tables, painter's order patterns, round parts, pipes and harnesses, exploded views, screens on faces, and the anti-patterns that got figures rejected. Read it before designing.
 - `references/kit.md`: the API, with signatures and examples.
 - `references/motion.md`: live behaviour (loops, springs, tours, pointer, keyboard, accessibility, reduced motion), plus envelopes for one-shot events, exploded views, depth re-sorting and arming, in vanilla JS and React.
 - `references/react.md`: the React/Next.js server/client split, element props and the large-payload key-warning trap.

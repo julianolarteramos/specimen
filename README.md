@@ -66,7 +66,7 @@ The machine parts of the kit it comes from (turned solids, pipes, cables, instru
   </tr>
   <tr>
     <td><a href="https://julianolarteramos.github.io/specimen/brain.html"><img src=".github/assets/brain.webp" alt="A model of the left half of a brain seen from the left: gyri and sulci, the lateral fissure, the cerebellum with its folia and the brainstem."></a></td>
-    <td><a href="https://julianolarteramos.github.io/specimen/liver.html"><img src=".github/assets/liver.webp" alt="A liver model seen from the front: the right and left lobes divided by the falciform ligament, the gallbladder below, the portal vein, hepatic artery and bile duct at the porta, and the inferior vena cava above."></a></td>
+    <td><a href="https://julianolarteramos.github.io/specimen/liver.html"><img src=".github/assets/liver.webp" alt="A liver model seen from the front: the large right lobe and the left lobe tapering to the left, divided by the falciform ligament that runs down to the notch in the sharp inferior border, the fundus of the gallbladder just below the border, and the inferior vena cava above."></a></td>
   </tr>
   <tr>
     <td><sub><b>Brain, left hemisphere.</b> Gyri carved into the cortex by a band-limited field, plus the lateral fissure and the central sulcus; cerebellar folia.</sub></td>
@@ -186,8 +186,8 @@ The machine examples from Anatomy are kept as the reference for mounts, instrume
 
 - **A teaching model, not an atlas.** Surfaces and colours are simplified on purpose, and the figures are not a medical reference.
 - **The brain's gyri are procedural.** They come from a band-limited noise field carved into the cortex; only the lateral fissure and the central sulcus are placed anatomically. The pattern of the other folds is not a real brain's.
-- **The liver's visceral face is simplified.** The porta, its vessels, the gallbladder and the inferior vena cava are there, and the caudate lobe is a single swelling; the impressions of neighbouring organs, the quadrate lobe and the fissures of the visceral face are not modelled.
-- **Views are pre-built, not free 3D.** Each view is a separate SVG of about 50–200 KB (the brain's are the heaviest, about 180–200 KB); a page with three to six views weighs 220–620 KB. Turning steps between views with a crossfade.
+- **The liver's visceral face is simplified.** It is a single plane that meets the front of the liver at the sharp inferior border. The porta with its vessels, the gallbladder in its fossa and the inferior vena cava in its groove are there, and the caudate lobe is a single swelling; the impressions of neighbouring organs, the quadrate lobe and the fissures of the visceral face are not modelled.
+- **Views are pre-built, not free 3D.** Each view is a separate SVG of about 35–125 KB (the heart's four-chamber cut is the heaviest; the brain's are about 95 KB); a page with three to six views weighs 170–560 KB. Turning steps between views with a crossfade.
 - **The example pages are in English.** Their titles, hints, legends and captions come from each build script and can be translated there.
 - **Builds are slow.** Every view is ray-marched at build time: the heart takes several minutes per theme.
 - **Not a chart library.** No axes or data plots; numbers appear as a live readout driven by a model.

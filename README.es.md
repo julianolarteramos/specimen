@@ -66,7 +66,7 @@ Las piezas de máquina del kit original (sólidos torneados, tubos, cables, inst
   </tr>
   <tr>
     <td><a href="https://julianolarteramos.github.io/specimen/brain.html"><img src=".github/assets/brain.webp" alt="Un modelo de la mitad izquierda de un cerebro visto desde la izquierda: circunvoluciones y surcos, la cisura lateral, el cerebelo con sus folias y el tronco encefálico."></a></td>
-    <td><a href="https://julianolarteramos.github.io/specimen/liver.html"><img src=".github/assets/liver.webp" alt="Un modelo de hígado visto de frente: los lóbulos derecho e izquierdo separados por el ligamento falciforme, la vesícula biliar debajo, la vena porta, la arteria hepática y el colédoco en el hilio, y la vena cava inferior arriba."></a></td>
+    <td><a href="https://julianolarteramos.github.io/specimen/liver.html"><img src=".github/assets/liver.webp" alt="Un modelo de hígado visto de frente: el gran lóbulo derecho y el izquierdo, que se afina hacia la izquierda, separados por el ligamento falciforme, que baja hasta la escotadura del borde inferior afilado; el fondo de la vesícula biliar asoma bajo el borde, y la vena cava inferior arriba."></a></td>
   </tr>
   <tr>
     <td><sub><b>Cerebro, hemisferio izquierdo.</b> Circunvoluciones talladas en la corteza por un campo de banda limitada, más la cisura lateral y el surco central; folias del cerebelo.</sub></td>
@@ -162,8 +162,8 @@ Los ejemplos de máquinas de Anatomy se conservan como referencia para montajes,
 
 - **Un modelo didáctico, no un atlas.** Las superficies y los colores están simplificados a propósito, y las figuras no son una referencia médica.
 - **Las circunvoluciones del cerebro son procedurales.** Salen de un campo de ruido de banda limitada tallado en la corteza; solo la cisura lateral y el surco central están puestos anatómicamente. El patrón de los demás pliegues no es el de un cerebro real.
-- **La cara visceral del hígado está simplificada.** Están el hilio, sus vasos, la vesícula y la vena cava inferior, y el lóbulo caudado es un solo abultamiento; las impresiones de los órganos vecinos, el lóbulo cuadrado y las fisuras de la cara visceral no están modelados.
-- **Vistas pregeneradas, no 3D libre.** Cada vista es un SVG aparte de unos 50–200 KB (las del cerebro son las más pesadas, unos 180–200 KB); una página con tres a seis vistas pesa entre 220 y 620 KB. El giro salta entre vistas con un fundido.
+- **La cara visceral del hígado está simplificada.** Es un solo plano que se encuentra con la cara anterior en el borde inferior afilado. Están el hilio con sus vasos, la vesícula en su fosa y la vena cava inferior en su surco, y el lóbulo caudado es un solo abultamiento; las impresiones de los órganos vecinos, el lóbulo cuadrado y las fisuras de la cara visceral no están modelados.
+- **Vistas pregeneradas, no 3D libre.** Cada vista es un SVG aparte de unos 35–125 KB (el corte de cuatro cámaras del corazón es la más pesada; las del cerebro rondan los 95 KB); una página con tres a seis vistas pesa entre 170 y 560 KB. El giro salta entre vistas con un fundido.
 - **Las páginas de ejemplo están en inglés.** Sus títulos, indicaciones, leyendas y pies salen de cada script de construcción y se pueden traducir ahí.
 - **Construir es lento.** Cada vista se calcula por ray marching al construir: el corazón tarda varios minutos por tema.
 - **No es una librería de gráficos.** No hay ejes ni series; los números aparecen como lectura en vivo de un modelo.

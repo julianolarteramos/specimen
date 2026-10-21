@@ -17,7 +17,6 @@ Everything is in `kit/iso-kit.ts`, with the same API in `kit/iso-kit.mjs`. World
 12. The audit (`kit/audit.mjs`)
 13. The WebGL layer (`kit/gl.mjs`)
 14. Tools
-15. Turning groups (`kit/turn.mjs`, `turn-build.mjs`, `turn-audit.mjs`)
 
 ## 1. Types
 ```ts
@@ -123,7 +122,6 @@ Rotations about z can't be done with a screen transform: rebuild the rotating pa
 | `pageHtml({ title, theme = "dark", body, script, width = 650 })` | A standalone document with `ISO_CSS` inlined. |
 | `kitScript()` | From `scripts/inline-kit.mjs`. Prepend it to `script` so the page can call kit functions such as `lineOnTop` and `translateAlong` while animating. |
 | `glScript()` | From `scripts/inline-kit.mjs`. The source of `kit/gl.mjs` (`GLSL_ISO`, `glCamera`, `glLayer`, `smooth`, `burst`, `settle`), to inline after `kitScript()` on a page with a shader: `script: kitScript() + glScript() + live`. It doesn't depend on the kit, so a page whose live code calls no kit function can inline it alone (the Raptor uses `glScript() + LIVE`). Everything is one module script, so live code must not redeclare `smooth`, `burst` or `settle`: a second `const smooth` is a SyntaxError that kills the page. |
-| `turnScript()` | From `scripts/inline-kit.mjs`. The 3D runtime (`TURN`, `TURN_CSS`) with `export` stripped, for a page with live parts: `script: turnScript() + glScript() + live`. Its internals are prefixed `t3`/`T3_`, so it inlines beside the kit and the WebGL layer. |
 | `ISO_CSS` | All the styles. `kit/iso.css` is the same text. |
 
 ## 9. React components
@@ -296,7 +294,7 @@ A detailed figure fails in ways the eye misses until a reviewer zooms in: a pipe
 | `slab(plan, z, height, meta, steps = 8)`, `extruded(ring, z, height, meta)`, `cylinder(cx, cy, r, z, height, meta)` | The shapes of `slabOf`, `extrude` and `cylinder`: the same rounded plan or any polygon ring (convex or not) stood on the floor, so a rounded deck corner or an L-shaped bracket is checked as drawn. |
 | `prism(F, polygon, s0, s1, meta)` | The shape of `G.prismOf`: any polygon in the frame's `u`, `v` plane extruded along `F.a`. |
 | `traced(meridian, { radius, error = 0.02, depth = 6 })` | The polygon `solid` and `lathe` record. |
-| `ball(at, r, meta)` | Spheres and terminal dots (`size / scale` world units). `meta.flats: [[nx, ny, nz, d]]` cuts flats (the half-space n·(p − c) ≤ d is kept): `sdf` is `max(\|p − c\| − r, n·(p − c) − d …)`, surface samples include the flats' rims, `boundsOf` is unchanged (conservative). The 3D mode's knuckle balls record this. |
+| `ball(at, r, meta)` | Spheres and terminal dots (`size / scale` world units). `meta.flats: [[nx, ny, nz, d]]` cuts flats (the half-space n·(p − c) ≤ d is kept): `sdf` is `max(\|p − c\| − r, n·(p − c) − d …)`, surface samples include the flats' rims, `boundsOf` is unchanged (conservative). |
 | `tube(points, radius, meta)` | A pipe or cable centreline with a radius (number, function of 0..1, or a list per point). |
 | `slide(F, from, to, r, meta)` | A rod sliding out of a gland at `from` (a `disc` from `from` to `to`). Posed in an explode or stroke state, it stretches from the gland face to `to + offset · F.a` instead of translating, so every check sees the rod that is drawn. Put it on the moving item (the one with the stroke `move`). |
 | `moved(shape, offset)`, `sdf(shape, p)`, `boundsOf(shape)` | Helpers: translate, signed distance (negative inside), world bounds. |
@@ -360,8 +358,6 @@ The live page reads the same `STAGGER` and `SPRING` from its data, so the audit 
 | `burst(age, rise, fall)` | An event envelope: a smoothstep attack over `rise` seconds, then exponential decay with time constant `fall`. 0 for `age ≤ 0`. |
 | `settle(state, target, dt, seconds, calm = false)` | A critically damped spring on `state = { x, v }` with time constant `seconds`, four sub-steps. Snaps to the target once both error and velocity are below 1e-4. Returns true while still moving. `calm` jumps straight to the target. |
 
-| `GLSL_TURN` | Opt-in GLSL for 3D figures, prepended by the figure to its fragment: `uGroupX/Y/Z/T`, `toGroup(p)` (world → the group's rest-world coordinates), `toWorld(g)`, `dirToGroup(d)`, `dirToWorld(d)`, and the cover masks `uCoverEdge[60]`, `uCoverCount[6]`, `coverOf(vb, soft)` (1 inside a part painted after the effect). It defines `toWorld`: don't prepend it to a fragment that declares its own. The chunk uses 70 uniform vectors. |
-| `glslPose(Name, prefix = "uName")` | The same four functions for any group: `toName`, `fromName`, `dirToName`, `dirFromName` over `prefixX/Y/Z/T`, so one shader follows several groups. Feed it `TURN.poseUniforms(controller, group, prefix)`. |
 
 A value for `fixed`, `set` or `draw` can be a number (float), an array of length 2–4 (`vec2`–`vec4`), or an array or `Float32Array` longer than 4, which goes to the uniform array of the declared type: `uniform3fv` for `uniform vec3 name[N]` (cover edges, spark positions), `uniform2fv`/`uniform4fv` likewise, and `uniform1fv` for `uniform float name[N]`. There are no ints, matrices or samplers through these calls; a `sampler2D` defaults to texture unit 0, so bind a texture with `layer.gl` (the ripple tank's history texture). Names that aren't in `uniforms` or `fixed`, and uniforms the compiler optimised away, are skipped.
 
@@ -373,47 +369,4 @@ A value for `fixed`, `set` or `draw` can be a number (float), an array of length
 | `scripts/capture.mjs` | One-shot screenshots: desktop, phone, hover, keys, timed shots, 4× zooms, reduced motion, console check. Chrome starts with WebGL on (SwiftShader allowed), so shaders show. `--times` delays are measured from the first shot; `--key` sends the same key codes as `drive.mjs` (`7` is `Digit7`, `Comma` sends `,`). |
 | `scripts/drive.mjs` | Scripted sessions in headless Chrome with WebGL on: scroll, move, click, key, slow, until, eval, shots and contact sheets. `--no-webgl` checks the SVG fallback and `--preload file.js` runs a script before the page's own. Use it for shader transitions and anything with a sequence. See `references/verify.md`. |
 | `scripts/lines.mjs` | The line-end check: every texture line in the card must end on a stroke, a dot or an outline, or under a later fill. `--out` rings the failures; exits 1 on any. The same check is the `["lines"]` action of `drive.mjs`. See `references/verify.md`, "Line ends". |
-| `scripts/inline-kit.mjs` | `kitScript()`, `glScript()` and `turnScript()` return the kit, the WebGL layer and the 3D runtime as plain script, to inline into a standalone page. |
-| `scripts/drive.mjs` `["turn", value, group?]` | 3D figures: sets the first turn group (or `group`, or a values object) through `window.__isoTurn` and waits two frames. |
-| `scripts/drive.mjs` `["orbit", out.png, from, to, step, sel?, scale?, [x,y,w,h]?, columns?]` | 3D figures: a contact sheet across angles, each frame labelled θ°. 15° over a full turn; 0.1° across an order change; 1° across a fold-prone bend. |
-| `scripts/turn-check.mjs` | 3D figures. `build.mjs --fidelity` (Node: prisms, rounds, lathes and tubes against the kit builders at P′(θ)); `page.html --order` (needs a `--verify` build), `--pops`, `--lines`, `--perf`, `--states file.json`, `--part name`, `--out dir`. Every check runs its planted control first. `references/3d.md`, section 14. |
-| `scripts/turn-bench.mjs` | 3D figures: `emit` and `order` CPU time in Node over 360 angles, per part kind (median of 7). |
-
-## 15. Turning groups (`kit/turn.mjs`, `turn-build.mjs`, `turn-audit.mjs`)
-The optional 3D mode. `references/3d.md` is the guide; this is the reference.
-```js
-import { turning, separate, gjk } from "../../kit/turn-build.mjs";
-import { TURN, TURN_CSS } from "../../kit/turn.mjs";
-import * as TA from "../../kit/turn-audit.mjs";
-```
-
-### `turning(P, { recorder, scale = 1 })` → `T`
-| Member | What it does |
-|---|---|
-| `T.group(name, { parent?, turn: { pivot } \| slide: { direction, travel } \| hinge: { point, axis, range } \| free: { origin } })` | A rigid group. Values: degrees (turn, hinge), world units (slide), `{ R \| q \| axis+angle, t, world? }` or `null` (free). |
-| `T.layer(name)`, `T.stack(names)` | Live layers and the full back-to-front stack of live and static layer names. |
-| `T.prism`, `T.round`, `T.lathe`, `T.ball`, `T.tube`, `T.fixed`, `T.plane`, `T.billboard`, `T.split` | Parts, in world coordinates at rest. Common options `{ name, group, layer, tone, crease, lit, material, owner, details }`. Signatures in `3d.md`, section 4. |
-| `T.build({ statics, poses, verify, strict })` | `{ svg, data, css, report, layerSvg(name, { width, height }), verify, planesByName }`. |
-| `T.parts`, `T.groups`, `T.layers`, `T.routes`, `T.data`, `T.built` | The scene, for the audit and the checks. |
-
-`details`: `seams`, `ribs: { s0, s1, count, phase, twist, fade, seams, tone }`, `bolts: [{ s, r, count, phase, size, tone, fade }]`, `dots: [{ at, normal, size, tone }]`, `rings: [{ at, normal, r, tone }]`, `rules: [{ points, tone, free }]`, `bevel`. Each constructor takes its own subset in its own frame (a ball's `s` runs along its first flat's normal; a prism takes dots, seams and bevel only): the table in `3d.md`, section 4. Materials: `gold`, `chrome`, `steel`, `gunmetal`, `rubber`, `brass`, `copper`.
-
-`separate(A, B, hints)` and `gjk(A, B, warm)` return `{ n, d, margin }` for two point sets (the build's plane solver).
-
-### `TURN` (runtime)
-| Member | What it does |
-|---|---|
-| `TURN.mount(stage, data, { onHold, onFrame, follow })` | The controller: `set(values \| θ, { detail })`, `render()`, `angleAt(x, y, z, group)`, `values`, `pose(name)`, `detach(name)`, `anchor(group, restPoint, restDir?)`, `cover(names, options)`, `order(layer)`, `orderIndex(layer)`, `events()`, `stats()`, `frames()`, `cams()`, `scene()`, `destroy()`. Installs `window.__isoTurn`. |
-| `TURN.cover(controller, names \| [names…], { polygons = 6, edges = 10, pad = 0.3, layers })` | `{ uCoverEdge, uCoverCount, dropped, parts }` for `coverOf`. |
-| `TURN.poseUniforms(controller, group, prefix = "uGroup")` | Four `vec3` for `GLSL_TURN` or `glslPose`. |
-| `TURN.anchor(scene, cams, group, point, dir)`, `TURN.floorOf(scene, group, R)` | Anchors outside a controller; the lowest z of a group under a rotation. |
-| `TURN.rotation(axis, deg)`, `TURN.quat(q)`, `TURN.compose(A, B)` | Rotations as `[9]`, for free poses. |
-| `TURN.materials`, `TURN.materialCss()`, `TURN.css()`, `TURN_CSS` | Material names; the CSS. |
-| `TURN.camera`, `TURN.poses`, `TURN.cams`, `TURN.prepare`, `TURN.emit`, `TURN.order`, `TURN.frame`, `TURN.gjk`, `TURN.disjoint`, `TURN.q`, `TURN.levels` | The pipeline, for tools: cameras per group, a prepared scene, one part's frame, a layer's order. |
-
-### Orbit audit (`kit/turn-audit.mjs`)
-| Export | What it does |
-|---|---|
-| `orbitOrExit(T, R, P, { flag = "--audit", argv, sweep, clips, poses, crowd, cover, fittings, quick, only, log })` | Runs `orbit` when the flag is present, prints the report, sets exit code 1 on any failure. Ends `turn audit passed` only for a full run; with `only` it ends `turn audit partial`, with `quick` `turn audit quick` (`3d.md`, section 13). |
-| `orbit(T, R, P, options)`, `orbitReport(result)`, `orbitFailures(result)` | The checks, the text, the count. `result.skipped` lists the lines `only` left out (printed `skipped`); `result.quick` is set for a quick run. |
-| `posed(shape, pose)`, `eventsOf(T, layer)` | A recorded shape moved by a group pose; a layer's edge-on angles. |
+| `scripts/inline-kit.mjs` | `kitScript()` and `glScript()` return the kit and the WebGL layer as plain script, to inline into a standalone page. |

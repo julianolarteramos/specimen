@@ -267,7 +267,6 @@ Every place two parts meet is either a flat face on a flat face, a tangent conta
 - **Two flanges, one joint.** Where a duct bolts to a pump outlet flange, the duct's own flange meets the outlet flange face to face; two flanges in the same place interlock. Each part then keeps a flange when the figure comes apart.
 - **Branches have fittings.** A branch leaves its run from a tee (a ball the run is gapped under, the branch starting where its rim meets the ball) or from a saddle pad on the run, never from a bare spot on the run's skin.
 - **Struts end in ball joints.** A strut's eye disc laid along an oblique axis sinks into whatever it meets. Give each end a short stem along the host's normal, a ball on the stem, and the rod between the balls (rim on sphere at all four joints).
-- **Balls with flats for joints that move.** In a 3D figure a rim landing on a sphere can't be ordered at every angle. Give the ball a flat (`T.ball({ flats: [{ n, d }] })`, recorded as `A.ball(c, r, { flats })`) and land the rim on the flat, or use coaxial knuckle discs. `references/3d.md`, section 5.
 - **Everything is held.** Every solid is connected through contacts to the stand: brackets carry boxes, studs carry harness clamps, a gearbox plate joins a motor to its actuator. A clamp that touches only the cable it holds floats.
 
 ### Clearance and crossings

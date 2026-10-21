@@ -4,6 +4,10 @@ All notable changes to Anatomy are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Removed
+
+- Specimen fork: the 3D `turn` mode (beta, convex parts only). `kit/turn.mjs`, `turn-build.mjs`, `turn-audit.mjs`, `turn-fixed.mjs`, `canvas-painter.mjs` and `gl-shared.mjs`, `GLSL_TURN` and `glslPose` in `kit/gl.mjs`, `turnScript` and `fixedScript` in `scripts/inline-kit.mjs`, the `turn` and `orbit` actions of `drive.mjs`, `scripts/turn-check.mjs`, `turn-fidelity.mjs` and `turn-bench.mjs` with their tests, `examples/turning-dial/` and `references/3d.md`. Rotation in specimen is a set of pre-generated azimuth views with a crossfade, each view audited.
+
 ### Added
 
 - Printable sheets. `scripts/print.mjs` freezes poses of a built figure as vector stills (WebGL as a 2× PNG) and prints one A4 or US Letter PDF in three formats: `poster` (one page: big name, numbers, pinned figure and a line per part), `drawing` (one page: parts list, specification, inset and a strip of lit steps) and `detailed` (two pages: pinned figure with round close-ups, then large lit steps with text and the why). Parts are CSS selectors over the live SVG, so any figure can be printed; crowded pins spread apart with hairline leaders, and the script fails when a format runs past its pages. `examples/raptor-engine/sheet.mjs` and `examples/arcade-cabinet/sheet.mjs` are the references, `references/print.md` the guide.

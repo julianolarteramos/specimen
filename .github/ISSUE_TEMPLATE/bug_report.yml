@@ -40,7 +40,6 @@ body:
       options:
         - SVG
         - SVG + WebGL
-        - 3D (beta)
         - Not about a figure
   - type: dropdown
     id: target

@@ -11,7 +11,7 @@ const SKIP_DIRS = ["node_modules", "shots", ".git"];
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const AGENTS = ["Claude Code", "OpenCode", "Codex", "Antigravity", "Other"];
 const LICENSES = ["MIT", "CC-BY-4.0"];
-const KINDS = ["SVG", "SVG + WebGL", "SVG + 3D", "SVG + WebGL + 3D"];
+const KINDS = ["SVG", "SVG + WebGL"];
 
 const posix = (path) => path.split(sep).join("/");
 const inside = (root, path) => path === root || path.startsWith(root + sep);
@@ -100,7 +100,7 @@ function detectPages(source, files, given) {
   }
   const pairs = html.filter((file) => !file.endsWith("-light.html") && html.includes(file.replace(/\.html$/, "-light.html")));
   if (pairs.length === 1) return { light: pairs[0].replace(/\.html$/, "-light.html"), dark: pairs[0] };
-  const singles = html.filter((file) => !/-verify(?:-light)?\.html$/.test(file) && !/^turning-stress/.test(file));
+  const singles = html.filter((file) => !/-verify(?:-light)?\.html$/.test(file));
   if (!pairs.length && singles.length === 1) return { [themeOf(source, singles[0]) === "light" ? "light" : "page"]: singles[0] };
   throw new Error(`can't tell which pages are the figure (found: ${html.join(", ") || "none"}); pass --pages a.html,b.html`);
 }
@@ -109,8 +109,7 @@ const themeOf = (source, page) => (readFileSync(join(source, page), "utf8").matc
 
 function detectKind(text) {
   const webgl = /getContext\(\s*["']webgl2?["']|\bGLSL_ISO\b|\bglLayer\b/.test(text);
-  const turning = /\bTURN\.mount\b|\bturnScript\b|\bTURN_CSS\b|class="[^"]*iso-turn/.test(text);
-  return `SVG${webgl ? " + WebGL" : ""}${turning ? " + 3D" : ""}`;
+  return `SVG${webgl ? " + WebGL" : ""}`;
 }
 
 export function rewriteSkillPaths(text, { fromDir, toDir, source, skill, skillLink }) {

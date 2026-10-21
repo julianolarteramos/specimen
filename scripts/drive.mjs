@@ -47,11 +47,6 @@ Fractions are 0..1 across the element.
                                           straight mark (a tick) needs one rooted end; lines with data-free and fade ramps are
                                           exempt. Prints each floating end in card px; out.png marks them with rings. Any failure
                                           makes the run exit 1
-  ["turn", value, group?]                 set a 3D figure's turn through window.__isoTurn (a number sets the first turn group,
-                                          group names another), then wait two animation frames
-  ["orbit", out.png, from, to, step, sel?, scale?, [x,y,w,h]?, columns?]
-                                          a contact sheet across angles of a 3D figure: each frame is turned, waits two
-                                          animation frames, is captured and labelled with its angle
   ["sheet", out.png, every, count, sel?, scale?, [x,y,w,h]?, columns?]
                                           take count frames every ms and tile them into one PNG, to catch pops and seams;
                                           each capture also takes 60-200 ms (more on heavy WebGL pages), so combine with ["slow", 0.05] for transitions
@@ -112,14 +107,10 @@ async function main() {
   }
   const [target, script] = rest;
   const actions = options.actions ?? JSON.parse(script ?? "[]");
-  const kinds = new Set(["scroll", "wait", "move", "click", "drag", "key", "slow", "until", "eval", "shot", "lines", "turn", "orbit", "sheet"]);
+  const kinds = new Set(["scroll", "wait", "move", "click", "drag", "key", "slow", "until", "eval", "shot", "lines", "sheet"]);
   if (!Array.isArray(actions)) throw new Error("actions must be an array");
   for (const action of actions) {
     if (!Array.isArray(action) || !kinds.has(action[0])) throw new Error(`unknown action ${Array.isArray(action) ? action[0] : action}`);
-    if (action[0] === "orbit") {
-      const [, , from, to, step] = action;
-      if (![from, to, step].every(Number.isFinite) || step === 0 || (step > 0 ? from > to : from < to)) throw new Error(`orbit needs numeric from, to and a nonzero step that moves from ${from} toward ${to}, got step ${step}`);
-    }
     if (action[0] === "sheet") {
       const [, , every, count] = action;
       if (!Number.isFinite(every) || every < 0 || !Number.isInteger(count) || count < 1) throw new Error(`sheet needs a non-negative every and a whole count of at least 1, got every ${every} and count ${count}`);
@@ -287,23 +278,6 @@ async function main() {
         const tiled = await evaluate(`(async()=>{const frames=${JSON.stringify(frames)};const cols=${columns ?? Math.min(count, 6)};const images=await Promise.all(frames.map(src=>new Promise(done=>{const image=new Image();image.onload=()=>done(image);image.src="data:image/png;base64,"+src})));const w=images[0].width,h=images[0].height,rows=Math.ceil(images.length/cols);const canvas=document.createElement("canvas");canvas.width=w*cols;canvas.height=h*rows;const ctx=canvas.getContext("2d");ctx.fillStyle="#808080";ctx.fillRect(0,0,canvas.width,canvas.height);images.forEach((image,index)=>{ctx.drawImage(image,(index%cols)*w,Math.floor(index/cols)*h);ctx.fillStyle="#ff00aa";ctx.font="bold 12px monospace";ctx.fillText(String(index),(index%cols)*w+6,Math.floor(index/cols)*h+16)});return canvas.toDataURL("image/png").split(",")[1]})()`);
         save(out, tiled);
         console.log(`sheet ${out} · ${count} frames every ${every} ms · readouts ${texts.map((text, index) => `${index}:"${text}"`).join(" ")}`);
-      } else if (kind === "turn") {
-        const [value, group] = args;
-        const call = group ? `window.__isoTurn.set(${JSON.stringify({ [group]: value })})` : `window.__isoTurn.set(${typeof value === "object" ? JSON.stringify(value) : Number(value)})`;
-        await evaluate(`(()=>{if(typeof window.__isoTurn?.set!=="function")throw new Error("${kind} action requires window.__isoTurn.set");${call};return new Promise((done)=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true))))})()`);
-      } else if (kind === "orbit") {
-        const [out, from, to, step, selector, scale, region, columns] = args;
-        const frames = [];
-        const labels = [];
-        for (let at = from; step > 0 ? at <= to + 1e-9 : at >= to - 1e-9; at += step) {
-          const angle = Math.round(at * 1000) / 1000;
-          await evaluate(`(()=>{if(typeof window.__isoTurn?.set!=="function")throw new Error("${kind} action requires window.__isoTurn.set");window.__isoTurn.set(${angle});return new Promise((done)=>requestAnimationFrame(()=>requestAnimationFrame(()=>done(true))))})()`);
-          frames.push(await capture(selector, scale ?? 0.5, region));
-          labels.push(`${angle}°`);
-        }
-        const tiled = await evaluate(`(async()=>{const frames=${JSON.stringify(frames)};const labels=${JSON.stringify(labels)};const cols=${columns ?? 6};const images=await Promise.all(frames.map(src=>new Promise(done=>{const image=new Image();image.onload=()=>done(image);image.src="data:image/png;base64,"+src})));const w=images[0].width,h=images[0].height,rows=Math.ceil(images.length/cols);const canvas=document.createElement("canvas");canvas.width=w*cols;canvas.height=h*rows;const ctx=canvas.getContext("2d");ctx.fillStyle="#808080";ctx.fillRect(0,0,canvas.width,canvas.height);images.forEach((image,index)=>{ctx.drawImage(image,(index%cols)*w,Math.floor(index/cols)*h);ctx.fillStyle="#ff00aa";ctx.font="bold 12px monospace";ctx.fillText(labels[index],(index%cols)*w+6,Math.floor(index/cols)*h+16)});return canvas.toDataURL("image/png").split(",")[1]})()`);
-        save(out, tiled);
-        console.log(`orbit ${out} · ${frames.length} frames ${from}°…${to}° every ${step}°`);
       } else if (kind === "lines") {
         const [out, selector, extra] = args;
         const result = await evaluate(`(${LINE_ENDS})(${JSON.stringify({ select: selector ?? null, show: Boolean(out), ...(extra ?? {}) })})`);

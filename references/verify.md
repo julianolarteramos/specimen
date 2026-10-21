@@ -47,8 +47,6 @@ Options are `--width` (1440), `--height` (1100), `--scale` (1), `--reduced`, `--
 | `["eval", js]` | Runs JS in the page and prints the result. Promises are awaited. |
 | `["shot", out, sel?, scale?, [x,y,w,h]?]` | Screenshots an element, or a region of it in CSS px. |
 | `["sheet", out, every, count, sel?, scale?, [x,y,w,h]?, columns?]` | Takes `count` frames `every` ms apart and tiles them into one numbered PNG. |
-| `["turn", value, group?]` | 3D figures: sets `window.__isoTurn` (a number sets the first turn group, `group` names another, an object sets several) and waits two frames. |
-| `["orbit", out, from, to, step, sel?, scale?, [x,y,w,h]?, columns?]` | 3D figures: a contact sheet across angles of the first turn group, each frame labelled. `["orbit", "swap.png", 129.7, 130.2, 0.1, null, 6, [x, y, w, h]]` is a 6× close-up of one order change. |
 | `["lines", out?, sel?, { tolerance }?]` | The line-end check below, in whatever pose the actions before it left the figure (apart, mid-stroke). `out` writes the card with every floating end ringed. A failure makes the run exit 1. |
 
 Traps:
@@ -135,46 +133,6 @@ It prints `audit passed` or `audit failed: n problems` and exits non-zero on any
 | `items with no shape` | Something is drawn without a recorded shape, so nothing checks it. | Record it in the helper that draws it. |
 
 A zero audit is necessary, not sufficient: it can't see a seam, a staircase or a texture that stops, and it only checks what you recorded. A stand-in shape that silences it is a bug, which is why it fails one. Run the line check, then look.
-
-## Orbit (3D figures)
-A figure with turning groups (`references/3d.md`) adds the orbit audit and the browser checks. Run them on the light page and the dark page.
-```sh
-node build.mjs --light --audit > audit.txt 2>&1 &   # the full run, in the background: ends "turn audit passed"
-node build.mjs --light --audit --quick    # ≈ 10× fewer states while iterating: ends "turn audit quick"
-node build.mjs --light --audit --quick --only=order,continuity   # a subset: the rest print "skipped", ends "turn audit partial"
-node build.mjs --light --verify           # a page with window.__isoVerify (recorded shapes) for --order
-node ../../scripts/turn-check.mjs build.mjs --fidelity
-node ../../scripts/turn-check.mjs page-verify-light.html --order --step 1
-node ../../scripts/turn-check.mjs page-verify-light.html --order --states clip.json     # hinges and clips: --step turns the first turn group only
-node ../../scripts/turn-check.mjs page-light.html --pops --no-webgl --states tilt-path.json   # one hinge as a continuous path at 0.02°
-node ../../scripts/turn-check.mjs page-light.html --pops --no-webgl --step 1 --out shots/pops
-node ../../scripts/turn-check.mjs page-light.html --lines
-node ../../scripts/turn-check.mjs page-light.html --perf --width 1440
-node ../../scripts/turn-check.mjs page-light.html --perf --width 390 --throttle 4
-node ../../scripts/drive.mjs page-light.html '[["orbit", "shots/orbit.png", 0, 345, 15]]'
-```
-**Time.** A 28-part figure with one turn, one hinge and one clip took 85 s quick and 17 minutes full, past a 10-minute shell timeout: run the full audit in the background. Quick runs undersample (`continuity` checks 100 halving candidates instead of 800, and the order scan a tenth of the states), so they guide, and only the full run's `turn audit passed` counts. A run with `--only` ends `turn audit partial`, never `passed`.
-
-**States.** The audit sweeps each turn group at 0.3° (order) and 0.05° (continuity), plus 2000 random states and every order-change event ± 0.001°. Motion clips (`clips: [{ name, at(t), from, to, frame }]`) are walked frame by frame: a gesture, a grasp, a break-apart. Free and hinge groups are proved only on the states you give, so give every clip, at several turn angles.
-
-**Lines.** `separation`, `unseparated`, `cycles`, `forced`, `swaps`, `layers`, `rigid`, `swept`, `posed`, `folds`, `self`, `crowding`, `endon`, `coverage`, `depth`, `continuity`. `3d.md`, section 13, has each line's failure and fix. A planted fault fails each line: a sunk pad (`separation`), a pinwheel of three tilted sticks (`cycles`), a fibre bent in a vertical plane (`folds`), a tube at 30° (`endon`), a rib row that stops (`continuity`).
-
-**Browser checks** (each runs its control first; a control that doesn't fail means the check is broken):
-- `--order`: the recorded shapes in a WebGL z-buffer against the DOM's fills: 0 live pairs with 4+ interior pixels at every angle and clip state.
-- `--pops`: first difference at every degree (θ → θ + 0.02°) and second difference at 0.1° over a full turn: 0 surviving regions, 0 cores of 6+ px. Read the 1–5 px cores it lists.
-- `--lines`: 0 floating ends at 24 angles.
-- `--perf`: the budgets in `3d.md`, section 15, at 1440 and at 390 with 4× CPU.
-
-**Orbit sheets.** 0–345° at 15°, then 0.1° steps across the three largest order changes (the audit lists them under "order changes"), then every clip slowed (`["slow", 0.05]`). Read them for spider angles (a hand that reads as legs from some side), parts that vanish behind others, and lines that end on another part's outline.
-
-### Checklist for 3D figures
-- [ ] `turn audit passed` with the full state set (not `--quick`, not `--only`), clips included.
-- [ ] `--order` on `--states` for every hinge and clip, `--pops` on a 0.02° path for every hinge (`3d.md`, section 14).
-- [ ] `turn-check` order, pops and lines at 0, fidelity passed, every control failing as designed.
-- [ ] Orbit sheets read at 15°; 8× crops of every knuckle, crossing and texture end at 8 angles, light and dark.
-- [ ] Materials read as metal on the light page: highlight bands move with the turn, nothing pops at a tone crossfade.
-- [ ] Every shader anchored to its group follows it at 0.1° steps; world effects don't turn; ink stops at occluding strokes (8× crop where a cover mask meets a part).
-- [ ] Budgets measured at 1440 and 390 × 4, with the half-rate lever if a dense figure needs it.
 
 ## Close-ups
 The owner found the Raptor's faults on a close-up of the light theme: cables over the main duct, a stepped bell, bolt rows that stopped dead. Shoot that close-up yourself, everywhere, before anyone else does.

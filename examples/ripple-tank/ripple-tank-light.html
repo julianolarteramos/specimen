@@ -917,28 +917,6 @@ float window(float x,float a,float b,float soft){return smoothstep(a-soft,a+soft
 vec3 tonemap(vec3 c,float exposure){return 1.-exp(-c*exposure);}
 `;
 
-const GLSL_TURN = `uniform vec3 uGroupX;
-uniform vec3 uGroupY;
-uniform vec3 uGroupZ;
-uniform vec3 uGroupT;
-uniform vec3 uCoverEdge[60];
-uniform float uCoverCount[6];
-vec3 toGroup(vec3 p){vec3 q=p-uGroupT;return vec3(dot(q,uGroupX),dot(q,uGroupY),dot(q,uGroupZ));}
-vec3 toWorld(vec3 g){return uGroupT+g.x*uGroupX+g.y*uGroupY+g.z*uGroupZ;}
-vec3 dirToGroup(vec3 d){return vec3(dot(d,uGroupX),dot(d,uGroupY),dot(d,uGroupZ));}
-vec3 dirToWorld(vec3 d){return d.x*uGroupX+d.y*uGroupY+d.z*uGroupZ;}
-float coverOf(vec2 vb,float soft){float c=0.;for(int p=0;p<6;p++){float n=uCoverCount[p];float inside=-1e4;for(int e=0;e<10;e++){if(float(e)>=n)break;vec3 h=uCoverEdge[p*10+e];inside=max(inside,h.x*vb.x+h.y*vb.y+h.z);}if(n>0.)c=max(c,1.-smoothstep(-soft,soft,inside));}return c;}
-`;
-
-function glslPose(name, prefix = `u${name}`) {
-  return `uniform vec3 ${prefix}X;uniform vec3 ${prefix}Y;uniform vec3 ${prefix}Z;uniform vec3 ${prefix}T;
-vec3 to${name}(vec3 p){vec3 q=p-${prefix}T;return vec3(dot(q,${prefix}X),dot(q,${prefix}Y),dot(q,${prefix}Z));}
-vec3 from${name}(vec3 g){return ${prefix}T+g.x*${prefix}X+g.y*${prefix}Y+g.z*${prefix}Z;}
-vec3 dirTo${name}(vec3 d){return vec3(dot(d,${prefix}X),dot(d,${prefix}Y),dot(d,${prefix}Z));}
-vec3 dirFrom${name}(vec3 d){return d.x*${prefix}X+d.y*${prefix}Y+d.z*${prefix}Z;}
-`;
-}
-
 function glCamera(projection) {
   const a = ((projection.azimuth ?? 45) * Math.PI) / 180;
   const e = ((projection.elevation ?? 30) * Math.PI) / 180;

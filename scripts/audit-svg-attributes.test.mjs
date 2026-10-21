@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import * as A from "../kit/audit.mjs";
-import { turning } from "../kit/turn-build.mjs";
 const P={origin:[0,0],scale:1,azimuth:45,elevation:30};
 const fixtures=[
   ["single quoted rectangle", "<rect x='10' y='20' width='30' height='40'/>"],
@@ -28,10 +27,8 @@ try{
   const expression=`Array.from({length:${fixtures.length}},(_,i)=>{const b=document.querySelector('#f'+i).getBBox();return[b.x,b.y,b.x+b.width,b.y+b.height]})`;
   const result=await promisify(execFile)(process.execPath,["scripts/drive.mjs",page,JSON.stringify([["eval",expression]])],{timeout:30000});native=JSON.parse(result.stdout.match(/eval: (.*)/)[1]);
 }finally{await rm(directory,{recursive:true,force:true});}
-fixtures.forEach(([name,markup],i)=>test(`public SVG bounds and fixed parts decode ${name}`,()=>{
+fixtures.forEach(([name,markup],i)=>test(`public SVG bounds decode ${name}`,()=>{
   assert.deepEqual(A.markupBox(markup),native[i]);
-  const T=turning(P);T.layer("figure");const part=T.fixed({name:"fixed",svg:markup,anchor:[0,0,0],shapes:[A.ball([0,0,0],50)]});
-  assert.deepEqual(part.spec.box,native[i].map((v,j)=>v+(j<2?-.5:.5)));
 }));
 test("coverage rejects a stand-in for single quoted real geometry",()=>{
   const item={name:"quoted",svg:fixtures[0][1],shapes:[A.ball([0,0,0],.1)]};assert.equal(A.coverage([item],P).length,1);

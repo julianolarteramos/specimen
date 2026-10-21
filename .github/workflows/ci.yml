@@ -52,13 +52,6 @@ jobs:
           node examples/ripple-tank/build.mjs
           node examples/ripple-tank/build.mjs --light
 
-      - name: Turning dial
-        run: |
-          node examples/turning-dial/build.mjs
-          node examples/turning-dial/build.mjs --light
-          node examples/turning-dial/build.mjs --light --verify
-          node examples/turning-dial/stress.mjs --light
-
       - name: Raptor engine
         run: |
           node examples/raptor-engine/build.mjs

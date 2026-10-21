@@ -17,7 +17,6 @@ Tick what applies, and say why for anything left unticked.
 - [ ] Figures with pipes, cables or round parts: `node build.mjs --audit` ends `audit passed`, every failing line at 0.
 - [ ] `node scripts/lines.mjs` prints `line ends: 0` on both themes and in every resting pose.
 - [ ] Shaders: a slowed contact sheet across every transition shows no pop, and `--no-webgl` still reads.
-- [ ] 3D: a full run ends `turn audit passed`, and `scripts/turn-check.mjs` passes.
 - [ ] Every number in the figure, the readout, the caption and the docs is true.
 - [ ] A line under `Unreleased` in `CHANGELOG.md`.
 

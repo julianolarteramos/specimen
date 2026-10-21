@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import * as A from "../kit/audit.mjs";
-import { turning } from "../kit/turn-build.mjs";
 const P = { origin: [0, 0], scale: 1, azimuth: 45, elevation: 30 };
 const fixtures = [
   ["rotated rectangle", '<rect width="10" height="10" transform="rotate(45)"/>'],
@@ -30,13 +29,10 @@ try {
   console.log("native SVG group bounds:", JSON.stringify(observations.map(v=>v.groupBox)));
   native = observations.map(v=>v.geometry);
 } finally { await rm(directory, { recursive: true, force: true }); }
-fixtures.forEach(([name,markup],i)=>test(`public bounds and fixed parts match native SVG geometry for ${name}`,()=>{
+fixtures.forEach(([name,markup],i)=>test(`public bounds match native SVG geometry for ${name}`,()=>{
   const expected = native[i];
   const observed = A.markupBox(markup);
   for(let j=0;j<4;j++)assert.ok(Math.abs(observed[j]-expected[j])<.002, `${name} bound ${j}: ${observed[j]} != ${expected[j]}`);
-  const T = turning(P);T.layer("figure");
-  const part = T.fixed({name:"authored",svg:markup,anchor:[0,0,0],shapes:[A.ball([0,0,0],20)]});
-  for(let j=0;j<4;j++)assert.ok(Math.abs(part.spec.box[j]-(expected[j]+(j<2?-.5:.5)))<.002);
 }));
 test("coverage rejects a narrow stand-in for a rotated rectangle",()=>{
   const cam=A.cameraBasis(P);

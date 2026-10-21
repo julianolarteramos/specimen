@@ -12,7 +12,7 @@ The user loved the first shader figure, but noticed that the colour changed inst
 5. Registering shader content to the SVG
 6. API and a minimal page
 7. Craft rules, each with the bug that taught it
-8. Light theme (8b. Shaders on a turning group)
+8. Light theme
 9. Verify
 10. Performance
 
@@ -436,16 +436,6 @@ The canvas lies over the back SVG's 0.6 px strokes. In light, a misregistered ed
 | A grey, washed-out fallback glow | Opacity on a pale token | Saturated tokens; multiply tints, normal pale cores (8.5) |
 | Grey streaks through a hot face | SVG strokes with gaps under a translucent ink | Fill the face (8.5) |
 | Light on a face the source can't see | A surface light without the true occluder | Use the same geometry the SVG draws (8.3) |
-
-## 8b. Shaders on a turning group
-In a 3D figure (`references/3d.md`) parts move as rigid groups, so a shader has to follow them.
-- **Anchor to a part**: `controller.anchor(group, restPoint, restDir)` gives `{ world, screen, direction }` every frame. Pass them as uniforms. That is how an LED rides a flexing fingertip, a flame stays on a ruptured line's end and a spark source sits on a knuckle.
-- **Anchor to a surface**: prepend `glslPose("Dial")` (or `GLSL_TURN` for one group) and pass `TURN.poseUniforms(controller, "dial", "uDial")`. Then `vec3 q = toDial(onFloor(vb, z))` is the surface point in the group's rest-world coordinates. Oil pooling on a turntable, a texture revealed by light and a scorch mark all turn with it.
-- **World space stays world space.** Smoke, sparks after they leave the source and oil on the bench never touch a group transform. Emit at the anchor's world position, then integrate in world.
-- **Occlusion by live parts.** A front canvas sits over a live layer. Mask its ink with the parts painted after the effect's own part: `TURN.cover(controller, [partName])` → `uCoverEdge`, `uCoverCount`, then `ink *= 1. - coverOf(vb, .7 * px)`. The masks are the exact convex silhouettes pushed out 0.3 vb, so ink stops at the occluder's stroke. Six polygons of ten edges each. Read `MAX_FRAGMENT_UNIFORM_VECTORS` and keep the SVG fallback below 128.
-- **A back canvas between live layers** needs no masks: put the surface that receives light in its own live layer under the parts that cover it (the turning dial's face under the hand).
-- Vector uniform arrays (`uniform vec3 uSpark[24]`) take a `Float32Array` through `draw`.
-- **The SVG fallback on a moving part** is a `T.billboard({ part, at, normal, svg })`. Its markup is in viewBox px centred on the projected point, not in world units, so scale world sizes by `G.scaleOf(P)`: a glow sized for a lens of radius 1.1 is `<circle r="${(1.1 * G.scaleOf(P)).toFixed(2)}"/>`. Written as `r="1.1"`, it draws a pin-dot about a third of the lens's size. Check it with `--no-webgl` and a 4× zoom.
 
 ## 9. Verify
 

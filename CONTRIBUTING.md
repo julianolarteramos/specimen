@@ -56,10 +56,6 @@ node examples/ripple-tank/build.mjs
 node examples/ripple-tank/build.mjs --light
 node examples/raptor-engine/build.mjs
 node examples/raptor-engine/build.mjs --light
-node examples/turning-dial/build.mjs
-node examples/turning-dial/build.mjs --light
-node examples/turning-dial/build.mjs --light --verify
-node examples/turning-dial/stress.mjs --light
 ```
 
 The Raptor builds take a few minutes each; the rest take seconds. `examples/test-rig/` and `examples/spot-plate/` are React components with no build script.
@@ -119,19 +115,7 @@ Anything with `until` or `eval` goes in an actions file. This `ignite.json` wait
 ]
 ```
 
-**3D figures.** The orbit audit is slow (budget 30 to 40 s per part for a full run), so iterate with `--quick` and run the full audit in the background. Only a full run's `turn audit passed` counts.
-
-```sh
-node examples/turning-dial/build.mjs --light --audit --quick
-node examples/turning-dial/build.mjs --light --audit > audit.txt 2>&1 &
-node scripts/turn-check.mjs examples/turning-dial/build.mjs --fidelity
-node scripts/turn-check.mjs examples/turning-dial/turning-dial-verify-light.html --order --step 1
-node scripts/turn-check.mjs examples/turning-dial/turning-dial-light.html --lines
-node scripts/turn-check.mjs examples/turning-dial/turning-dial-light.html --perf --width 390 --throttle 4
-node scripts/turn-bench.mjs examples/turning-dial/build.mjs
-```
-
-[`references/verify.md`](references/verify.md) has every option, the review checklist and the common faults. [`references/3d.md`](references/3d.md) covers the 3D checks.
+[`references/verify.md`](references/verify.md) has every option, the review checklist and the common faults.
 
 ## House rules
 

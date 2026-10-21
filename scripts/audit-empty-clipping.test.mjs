@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import * as A from "../kit/audit.mjs";
-import { turning } from "../kit/turn-build.mjs";
 const small='<rect x="2" y="2" width="2" height="2"/>';
 const fixtures=[
   ["fully disjoint primitive",'<defs><clipPath id="cut"><rect width="10" height="10"/></clipPath></defs><rect x="20" y="20" width="10" height="10" clip-path="url(#cut)"/>'+small],
@@ -26,7 +25,6 @@ try{
 const P={origin:[0,0],scale:1,azimuth:45,elevation:30};
 fixtures.forEach(([name,markup],i)=>test(`public clipped bounds match actual native SVG pixels for ${name}`,()=>{
   assert.deepEqual(A.markupBox(markup),pixels[i]);
-  if(pixels[i]){const T=turning(P);T.layer("figure");const part=T.fixed({name:"fixed",svg:markup,anchor:[0,0,0],shapes:[A.ball([0,0,0],50)]});assert.deepEqual(part.spec.box,pixels[i].map((v,j)=>v+(j<2?-.5:.5)));}
 }));
 test("coverage accepts the true visible plane without an invisible clipped outlier",()=>{
   const cam=A.cameraBasis(P),F={o:[0,0,0],a:cam.V,u:cam.R,v:cam.D};

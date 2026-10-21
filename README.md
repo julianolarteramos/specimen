@@ -1,6 +1,6 @@
 <h1 align="center">Anatomy</h1>
 
-<p align="center"><b>A Claude skill that explains an idea by building it as a real, working object.</b><br>Also runs in Antigravity, OpenCode, Codex and MiniMax Code.<br>Crafted, interactive isometric figures with many small precise parts, in SVG, WebGL and 3D.</p>
+<p align="center"><b>A Claude skill that explains an idea by building it as a real, working object.</b><br>Also runs in Antigravity, OpenCode, Codex and MiniMax Code.<br>Crafted, interactive isometric figures with many small precise parts, in SVG and WebGL.</p>
 
 <p align="center">
   <a href="https://code.claude.com/docs/en/skills"><img src="https://img.shields.io/badge/Claude_Code-skill-1b1b19?style=flat-square&logo=claude&logoColor=white" alt="Claude Code skill"></a>
@@ -85,13 +85,12 @@ Every screenshot is the light theme of a page in [`examples/`](examples), captur
 
 ## What it makes
 
-Three kinds of figure. All three share one kit, one camera and one set of craft rules.
+Two kinds of figure. Both share one kit, one camera and one set of craft rules.
 
 | Kind | What it is | Example |
 |---|---|---|
 | **SVG** | The core. Solid isometric parts with four-tone shading, painted back to front, in a card with a live readout and eased motion. It ships as a standalone HTML page, a lone `.svg` file with its styles embedded, or React/Next.js components. | `dial-indicator`, `desk-computer`, `arcade-cabinet`, `test-rig` |
 | **SVG + WebGL** | For what lines can't draw: fire, exhaust, water, caustics, lamp light, glow, steam. The shader runs in a canvas between a back and a front SVG, in the figure's own isometric camera, so it sits inside the drawing. The SVG still reads without WebGL. | `raptor-engine`, `ripple-tank` |
-| **3D** <sup>beta</sup> | Parts that turn in true 3D: a dial or turntable that spins, fingers that flex, a piece that breaks off and falls. The moving parts are re-projected and re-shaded by the kit's own rules every frame; the rest of the figure stays static art. | `turning-dial` |
 
 Each figure is light or dark. Light is the theme the skill designs for first, shaders included.
 
@@ -242,18 +241,17 @@ Each framework-free example has a Node build script that writes standalone pages
 | [`ripple-tank`](examples/ripple-tank) | A school ripple tank on tall legs over a paper screen, seen from 44° up. Two WebGL layers are registered to the isometric planes and driven by a pure model in `model.mjs`. | `node examples/ripple-tank/build.mjs` |
 | [`test-rig`](examples/test-rig) | A production figure from a React/Next.js site: a glass button on a spring-mounted carriage, a finger probe on a rail, and a dial gauge reading the lean. 53 solids. No build script: copy it into a React app. | none |
 | [`spot-plate`](examples/spot-plate) | A second figure from the same site: six pairs of glass drops on a spot plate that run together into one piece of glass as a fan of feeler blades opens. Each pair is drawn from one distance field. No build script: copy it into a React app. | none |
-| [`turning-dial`](examples/turning-dial) | The 3D mode: a combination dial that turns in true 3D with a small robot hand on it, a three-hinge finger that lifts, and a pod that breaks off as a free body. `stress.mjs` is a 380-part hand in a cluttered workshop, used to measure performance. | `node examples/turning-dial/build.mjs` |
 
 The Raptor and the arcade cabinet also print. `node scripts/print.mjs examples/raptor-engine/sheet.mjs --format all` writes three A4 PDFs from the built light page: a one-page poster, a one-page technical drawing and a two-page detailed explainer. Ask for a printable version of any figure and Anatomy writes its `sheet.mjs`; see [`references/print.md`](references/print.md).
 
-`node examples/raptor-engine/build.mjs --audit`, `node examples/arcade-cabinet/build.mjs --audit` and `node examples/turning-dial/build.mjs --light --audit` also run the geometry audit. The 3D audit is slow; see [`references/3d.md`](references/3d.md).
+`node examples/raptor-engine/build.mjs --audit` and `node examples/arcade-cabinet/build.mjs --audit` also run the geometry audit.
 
 ## How it works
 
 - **[`SKILL.md`](SKILL.md)** is what Claude reads. It sets the workflow: collect the true numbers first, invent the object, write a parts list, plan the world, build the geometry once with the kit, paint back to front, frame it, make it live, and then verify it like a critic. It also holds the craft rules in short form.
-- **[`kit/`](kit)** is the drawing library the figures are built from: the isometric camera, solids and a parts library (`iso-kit`), round parts on any axis (`lathe.mjs`), pipes and cables (`tube.mjs`), the WebGL layer (`gl.mjs`), the 3D runtime (`turn*.mjs`), and React components (`react/`). Apart from React for those components, it has no dependencies.
-- **[`references/`](references)** are the long-form guides Claude opens when it needs them: craft, the kit API, motion, React, verification, WebGL, a design walkthrough and the 3D mode.
-- **Verification.** [`kit/audit.mjs`](kit/audit.mjs) proves the geometry: nothing passes through anything, every end sits on a mount, and every overlap is drawn in depth order (`node build.mjs --audit`). In headless Chrome, [`scripts/capture.mjs`](scripts/capture.mjs) and [`scripts/drive.mjs`](scripts/drive.mjs) take screenshots, close-ups and slowed-down contact sheets, [`scripts/lines.mjs`](scripts/lines.mjs) fails any line that ends in mid-air, and [`scripts/turn-check.mjs`](scripts/turn-check.mjs) checks 3D figures. The skill tells Claude to read every PNG it makes.
+- **[`kit/`](kit)** is the drawing library the figures are built from: the isometric camera, solids and a parts library (`iso-kit`), round parts on any axis (`lathe.mjs`), pipes and cables (`tube.mjs`), the WebGL layer (`gl.mjs`), and React components (`react/`). Apart from React for those components, it has no dependencies.
+- **[`references/`](references)** are the long-form guides Claude opens when it needs them: craft, the kit API, motion, React, verification, WebGL, and a design walkthrough.
+- **Verification.** [`kit/audit.mjs`](kit/audit.mjs) proves the geometry: nothing passes through anything, every end sits on a mount, and every overlap is drawn in depth order (`node build.mjs --audit`). In headless Chrome, [`scripts/capture.mjs`](scripts/capture.mjs) and [`scripts/drive.mjs`](scripts/drive.mjs) take screenshots, close-ups and slowed-down contact sheets and [`scripts/lines.mjs`](scripts/lines.mjs) fails any line that ends in mid-air. The skill tells Claude to read every PNG it makes.
 
 <details>
 <summary><b>Repository layout</b></summary>
@@ -271,22 +269,15 @@ anatomy/
 │   ├── lathe.mjs             round parts on any axis
 │   ├── tube.mjs              pipes, tubes and cables
 │   ├── audit.mjs             the geometry audit
-│   ├── gl.mjs                the WebGL layer for shaders inside the drawing
-│   ├── turn.mjs              the 3D runtime (beta)
-│   ├── turn-build.mjs        the 3D builder
-│   ├── turn-audit.mjs        the 3D orbit audit
-│   └── turn-fixed.mjs, canvas-painter.mjs, gl-shared.mjs
-│                             experimental variants, not yet documented or used by the examples
+│   └── gl.mjs                the WebGL layer for shaders inside the drawing
 ├── references/               long-form guides Claude reads as needed
 │   ├── craft.md  kit.md  motion.md  react.md
-│   └── verify.md  webgl.md  walkthrough.md  3d.md
+│   └── verify.md  webgl.md  walkthrough.md
 ├── scripts/                  headless Chrome checks and build helpers
 │   ├── capture.mjs           screenshots and close-ups
 │   ├── drive.mjs             scripted sessions and contact sheets
 │   ├── lines.mjs             the line-end check (with line-ends.mjs)
-│   ├── inline-kit.mjs        the kit as source, to inline into a standalone page
-│   ├── turn-check.mjs        3D checks in the browser (with turn-fidelity.mjs)
-│   └── turn-bench.mjs        3D timing in Node
+│   └── inline-kit.mjs        the kit as source, to inline into a standalone page
 ├── examples/                 eight complete figures, built pages committed
 ├── evals/evals.json          test prompts and what a good answer contains
 └── .github/                  issue forms, PR template, CI, README images
@@ -300,18 +291,15 @@ anatomy/
 |---|---|---|
 | **[Claude Code](https://code.claude.com/docs/en/overview)**, or [Antigravity](https://antigravity.google), [OpenCode](https://opencode.ai/docs/skills/), [Codex](https://developers.openai.com/codex/skills) or [MiniMax Code](https://github.com/MiniMax-AI/minimax-code) | everything | The skill is written for Claude Code and follows the open Agent Skills format, so Antigravity, OpenCode, Codex and MiniMax Code load it too. In Codex, the browser checks start Chrome; if its sandbox blocks that, allow it for those commands. |
 | **Node.js 20.10+** | builds, kit, checks | Built-in modules only: nothing to `npm install`. The examples were rebuilt byte for byte on Node 20.19 and 22.11. On Node 20 the browser scripts restart themselves with `--experimental-websocket`. |
-| **Chrome or Chromium** | the checks | `capture.mjs`, `drive.mjs`, `lines.mjs` and `turn-check.mjs` look in the usual places on macOS, Linux and Windows and in Playwright's cache. Set `CHROME_PATH` for any other binary. They run it headless with WebGL on. |
+| **Chrome or Chromium** | the checks | `capture.mjs`, `drive.mjs` and `lines.mjs` look in the usual places on macOS, Linux and Windows and in Playwright's cache. Set `CHROME_PATH` for any other binary. They run it headless with WebGL on. |
 | **React 18+** | React output only | `kit/react/`, `examples/test-rig/` and `examples/spot-plate/`. |
 
 ## Limits
 
 - **It is not a chart library.** There are no axes, series or data plots. Numbers appear as a live readout driven by a model, and as the true sizes and counts of the parts.
 - **It draws machines, instruments, tools and furniture.** Not people or exact maps. An idea that has no mechanism to build will come out weaker.
-- **It is slow on purpose.** A figure takes a long session: the parts list, the geometry, the audit, and close-ups of every joint in both themes. The Raptor's build takes a few minutes, and a full 3D orbit audit takes 15 to 20 minutes for 30 parts.
+- **It is slow on purpose.** A figure takes a long session: the parts list, the geometry, the audit, and close-ups of every joint in both themes. The Raptor's build takes a few minutes.
 - **Shaders need WebGL.** Without it the SVG still reads, and under reduced motion every figure goes still.
-
-> [!NOTE]
-> **The 3D mode is beta.** It is proved on its example and one test figure, not yet on a production figure. A small 3D figure runs at 60 fps; the 380-part stress hand measured about 20 fps at 1440 px wide and 13 to 15 fps on a throttled phone profile, on a heavily loaded machine.
 
 ## Share a figure
 

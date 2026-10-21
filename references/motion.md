@@ -131,16 +131,6 @@ Parts that move toward or away from the viewer change painter's order as they mo
   - **Give each line that is mounted on one part only the move of that part.**
   - **Check the paths a viewer can make**, not only the two from rest: a quick hover reverses the springs halfway (`reversals`), and an assembly that is late on the way back can sweep through a cable that is already home. Reverse at every stagger boundary (`A.reversalsOf`), not at a few round times: the bad windows are about 15 ms wide, and 0.15, 0.3 and 0.5 s missed all of them. Feed those frames to the depth states as well as to the clearance check, and test solids against solids too (`A.solidClearances`): a flange tucked under an overhang on its host met the host's spring tail on the way home, 0.67 deep, with every tube check at zero.
 
-## Turning by hand
-For a 3D figure (`references/3d.md`):
-- **Drag.** `controller.angleAt(clientX, clientY, zFace, "dial")` is the pointer's angle on the face's plane, unwrapped across turns. On pointer down, store it and the current target. On move, set target = start + Δ, and capture the pointer once the move passes about 1.5°. The group follows with exponential follow (τ = 0.12 s). The stage keeps `touch-action: pan-y`.
-- **Keys.** Arrow keys step by one division, Shift steps by ten, Home returns to the index.
-- **Coupled groups.** Drive them from one value through `follow(values)` (a wheel at a quarter of the dial, a finger chain from one `lift`), so a tool, a drag and the tour all agree.
-- **Gestures and clips are pure functions of time** (`tapAt(t)`, `breakAt(t)`): the build samples them, the audit walks them frame by frame, and the page can play them backwards to reset with no jump.
-- **Hook takeover.** Any `window.__isoTurn` call runs `onHold`: stop the tour, and keep values a tool set until the reader acts again.
-- **Half rate.** A dense figure keeps an average of `controller.set` time and renders on alternate frames above 14 ms, every frame below 9 ms, with time-based motion unchanged.
-- Reduced motion gets one still frame. Offscreen, the loop stops (IntersectionObserver).
-
 ## Arming
 If an action needs the machine in a certain state (assembled before firing, door closed before spinning), arm first:
 1. Set the targets that bring it into that state (`setApart(false)`, `select(null)`).

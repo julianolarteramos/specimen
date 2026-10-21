@@ -45,14 +45,6 @@ test("an invalid later action fails before earlier actions execute", async () =>
   assert.doesNotMatch(result.stdout, /shouldNotRun/);
 });
 
-test("orbit rejects a step that never reaches its end angle", async () => {
-  for (const action of [["orbit", "out.png", 90, 0, 0], ["orbit", "out.png", 0, 90, -10], ["orbit", "out.png", 0, 90, "10"]]) {
-    const result = await run([action]);
-    assert.equal(result.code, 1, JSON.stringify(action));
-    assert.match(result.stderr, /orbit needs numeric from, to and a nonzero step/);
-  }
-});
-
 test("sheet rejects a count that yields no frames", async () => {
   for (const action of [["sheet", "out.png", 50, 0], ["sheet", "out.png", 50, 2.5], ["sheet", "out.png", -1, 3]]) {
     const result = await run([action]);
@@ -61,14 +53,12 @@ test("sheet rejects a count that yields no frames", async () => {
   }
 });
 
-test("a valid orbit and sheet still pass validation", async () => {
-  const orbit = join(tmpdir(), `anatomy-orbit-${process.pid}.png`);
+test("a valid sheet still passes validation", async () => {
   const sheet = join(tmpdir(), `anatomy-sheet-${process.pid}.png`);
   try {
-    const result = await run([["eval", "window.__isoTurn={set(){}}"], ["orbit", orbit, 0, 20, 10], ["sheet", sheet, 10, 2]]);
+    const result = await run([["sheet", sheet, 10, 2]]);
     assert.equal(result.code, 0, result.stderr);
   } finally {
-    await rm(orbit, { force: true });
     await rm(sheet, { force: true });
   }
 });

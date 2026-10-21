@@ -12,15 +12,3 @@ export function kitScript() {
 export function glScript() {
   return strip("gl.mjs");
 }
-
-export function turnScript() {
-  return strip("turn.mjs");
-}
-
-export function fixedScript() {
-  return strip("turn-fixed.mjs") + "\n" + strip("canvas-painter.mjs");
-}
-
-export function glSharedScript() {
-  return strip("gl-shared.mjs");
-}

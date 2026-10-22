@@ -64,18 +64,22 @@ for organ in kidney brain liver; do
   node examples/$organ/build.mjs
   node examples/$organ/build.mjs --light
 done
+node examples/endocrine/build.mjs
+node examples/endocrine/build.mjs --light
 ```
 
-The organ pages ray-march their fields at build time: the heart takes several minutes per theme, the Raptor a few minutes, the rest take seconds to a minute. After rebuilding a light organ page, copy it into `docs/` (see "The demo site" below). `examples/test-rig/` and `examples/spot-plate/` are React components with no build script.
+The organ pages ray-march their fields at build time: the heart takes several minutes per theme, the Raptor and the endocrine system a few minutes, the rest take seconds to a minute. The endocrine build writes the English and the Spanish page of a theme in one run. After rebuilding a light organ page, copy it into `docs/` (see "The demo site" below). `examples/test-rig/` and `examples/spot-plate/` are React components with no build script.
 
 After a build, `git status --short` must show nothing unless you meant to change a figure. CI runs exactly these commands and then `git diff --exit-code`.
 
 ## The demo site
 
-`docs/` is the GitHub Pages site (Pages serves `main`, folder `/docs`). It holds `index.html` and a copy of each light organ page (`docs/heart.html`, `docs/kidney.html`, `docs/brain.html`, `docs/liver.html`). CI fails when a copy differs from `examples/<organ>/<organ>-light.html`, so refresh them after a rebuild:
+`docs/` is the GitHub Pages site (Pages serves `main`, folder `/docs`). It holds `index.html` and a copy of each light organ page (`docs/heart.html`, `docs/kidney.html`, `docs/brain.html`, `docs/liver.html`, and `docs/endocrine.html` with `docs/endocrine-es.html`). CI fails when a copy differs from `examples/<organ>/<organ>-light.html` (`endocrine-es-light.html` for the Spanish page), so refresh them after a rebuild:
 
 ```sh
 for organ in heart kidney brain liver; do cp examples/$organ/$organ-light.html docs/$organ.html; done
+cp examples/endocrine/endocrine-light.html docs/endocrine.html
+cp examples/endocrine/endocrine-es-light.html docs/endocrine-es.html
 ```
 
 ## The checks

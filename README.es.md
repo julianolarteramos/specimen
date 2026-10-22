@@ -72,6 +72,12 @@ Las piezas de máquina del kit original (sólidos torneados, tubos, cables, inst
     <td><sub><b>Cerebro, hemisferio izquierdo.</b> Circunvoluciones talladas en la corteza por un campo de banda limitada, más la cisura lateral y el surco central; folias del cerebelo.</sub></td>
     <td><sub><b>Hígado.</b> Lóbulos, ligamento falciforme, vesícula biliar, los vasos del hilio y la vena cava inferior.</sub></td>
   </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="https://julianolarteramos.github.io/specimen/endocrine-es.html"><img src=".github/assets/endocrine.webp" width="540" alt="Un modelo de aula del sistema endocrino en la mitad posterior de un torso cortado en el plano coronal: la cara medial del encéfalo con el hipotálamo y la hipófisis rodeados por anillos azules, la tiroides sobre la tráquea, el timo sobre el corazón, el páncreas en el asa del duodeno, los dos riñones con sus suprarrenales, las gónadas, la aorta y la cava con flujos punteados de hormonas, y las cadenas simpáticas."></a></td>
+  </tr>
+  <tr>
+    <td colspan="2"><sub><b>Sistema endocrino.</b> Un medio torso con las glándulas, los vasos y los nervios como campos, que reproduce la respuesta al estrés con un solo modelo: la vía rápida del simpático a la médula suprarrenal, la vía lenta de CRH, ACTH y cortisol, y el freno del cortisol sobre el hipotálamo y la hipófisis.</sub></td>
+  </tr>
 </table>
 
 Cada imagen es la página clara de [`examples/`](examples), capturada con el propio [`scripts/drive.mjs`](scripts/drive.mjs) de la skill. Las páginas generadas están en el repositorio: puedes abrir cualquier `.html` de `examples/` directamente, o usar la [demo en vivo](https://julianolarteramos.github.io/specimen/).
@@ -122,7 +128,7 @@ No hace falta nombrar la skill: Claude también la carga cuando pides una ilustr
 
 La figura llega como código tuyo: un script de Node que genera las páginas, junto con el kit.
 
-Las páginas de ejemplo están en inglés; los textos (título, indicaciones, leyenda y pie) salen de cada script de construcción. Si pides la figura en español, pide también que esos textos vayan en español.
+Las páginas de ejemplo están en inglés (el sistema endocrino también tiene la suya en español); los textos (título, indicaciones, leyenda y pie) salen de cada script de construcción. Si pides la figura en español, pide también que esos textos vayan en español.
 
 ## Cómo funciona
 
@@ -144,6 +150,7 @@ Cada ejemplo tiene un script de Node que escribe una página oscura a su lado; a
 | [`kidney`](examples/kidney) | Un riñón izquierdo con su suprarrenal, entero y abierto por el plano coronal: corteza, pirámides medulares, cálices y pelvis en la grasa del seno, los vasos del hilio y el uréter. | `node examples/kidney/build.mjs` |
 | [`brain`](examples/brain) | La mitad izquierda de un cerebro con circunvoluciones y surcos, la cisura lateral y el surco central, el cerebelo con sus folias y el tronco encefálico. | `node examples/brain/build.mjs` |
 | [`liver`](examples/liver) | Un hígado con sus lóbulos derecho e izquierdo, el ligamento falciforme, la vesícula biliar, la vena porta, la arteria hepática y el colédoco en el hilio, y la vena cava inferior. | `node examples/liver/build.mjs` |
+| [`endocrine`](examples/endocrine) | El sistema endocrino en la mitad posterior de un torso cortado en el plano coronal: la cara medial del encéfalo con el hipotálamo, la hipófisis y la pineal, la tiroides y las paratiroides sobre la tráquea, el timo, el corazón, el páncreas en el asa del duodeno, los riñones con sus suprarrenales abiertas, las gónadas, los grandes vasos y las cadenas simpáticas, el vago y un nervio aferente. Cinco vistas auditadas; un modelo puro en `model.mjs` reproduce en bucle la respuesta al estrés, con el tiempo y el paso en curso en la lectura y los cinco niveles en barras bajo el pie. Cada construcción escribe la página en inglés y otra en español (`endocrine-es.html`). La misma figura es el centro de una [presentación de clase sobre el sistema endocrino](https://julianolarteramos.github.io/sistema-endocrino/v3/) en 48 pasos. | `node examples/endocrine/build.mjs` |
 
 El riñón, el cerebro y el hígado comparten un constructor, [`examples/shared/specimen.mjs`](examples/shared/specimen.mjs): peana y varilla, vistas generadas y auditadas en paralelo, y la tarjeta con fundido.
 
@@ -163,8 +170,9 @@ Los ejemplos de máquinas de Anatomy se conservan como referencia para montajes,
 - **Un modelo didáctico, no un atlas.** Las superficies y los colores están simplificados a propósito, y las figuras no son una referencia médica.
 - **Las circunvoluciones del cerebro son procedurales.** Salen de un campo de ruido de banda limitada tallado en la corteza; solo la cisura lateral y el surco central están puestos anatómicamente. El patrón de los demás pliegues no es el de un cerebro real.
 - **La cara visceral del hígado está simplificada.** Es un solo plano que se encuentra con la cara anterior en el borde inferior afilado. Están el hilio con sus vasos, la vesícula en su fosa y la vena cava inferior en su surco, y el lóbulo caudado es un solo abultamiento; las impresiones de los órganos vecinos, el lóbulo cuadrado y las fisuras de la cara visceral no están modelados.
-- **Vistas pregeneradas, no 3D libre.** Cada vista es un SVG aparte de unos 35–125 KB (el corte de cuatro cámaras del corazón es la más pesada; las del cerebro rondan los 95 KB); una página con tres a seis vistas pesa entre 170 y 560 KB. El giro salta entre vistas con un fundido.
-- **Las páginas de ejemplo están en inglés.** Sus títulos, indicaciones, leyendas y pies salen de cada script de construcción y se pueden traducir ahí.
+- **El sistema endocrino también es un modelo didáctico.** La cara medial del encéfalo es un corte plano, las glándulas pequeñas (hipotálamo, hipófisis, pineal, paratiroides) están a escala real y miden pocos píxeles a 1×, los pulmones y el hígado son incrustaciones planas en la cara de corte, y la red de vasos se reduce a los que llevan las hormonas del modelo.
+- **Vistas pregeneradas, no 3D libre.** Cada vista es un SVG aparte de unos 35–185 KB (el medio torso del sistema endocrino, con sus muchos vasos, es el más pesado, con unos 175–185 KB; las del cerebro rondan los 95 KB); una página con tres a seis vistas pesa entre 170 y 970 KB. El giro salta entre vistas con un fundido.
+- **Las páginas de ejemplo están en inglés,** salvo el sistema endocrino, que también viene en español. Sus títulos, indicaciones, leyendas y pies salen de cada script de construcción y se pueden traducir ahí.
 - **Construir es lento.** Cada vista se calcula por ray marching al construir: el corazón tarda varios minutos por tema.
 - **No es una librería de gráficos.** No hay ejes ni series; los números aparecen como lectura en vivo de un modelo.
 
@@ -174,7 +182,7 @@ specimen es un fork de **[Anatomy](https://github.com/wheresryan22/anatomy)**, d
 
 **Se conserva de Anatomy:** la cámara isométrica y el renderizador SVG (`iso-kit`), los constructores de tarjeta y página con su CSS, las piezas torneadas, tubos y cables (`lathe.mjs`, `tube.mjs`), la auditoría geométrica y su solucionador del orden de pintado, la capa WebGL, los componentes de React, los chequeos en Chrome (`capture.mjs`, `drive.mjs`, `lines.mjs`), las hojas imprimibles, los ejemplos de máquinas, la mayoría de las reglas de oficio y todo el historial de commits.
 
-**Se agrega en specimen:** campos de distancia orgánicos (`kit/blob.mjs`) con sombreado de cuatro tonos por ray marching y capas de tejido; el modo orgánico de la auditoría, con chequeos de límites y de Lipschitz; cortes con tejidos de corte y núcleos de campo; el divisor de campos; velos para membranas; el constructor compartido de órganos; los ejemplos de corazón, riñón, cerebro e hígado; un `SKILL.md` y un `references/craft.md` reescritos como doctrina de specimen; el sitio de demostración.
+**Se agrega en specimen:** campos de distancia orgánicos (`kit/blob.mjs`) con sombreado de cuatro tonos por ray marching y capas de tejido; el modo orgánico de la auditoría, con chequeos de límites y de Lipschitz; cortes con tejidos de corte y núcleos de campo; el divisor de campos; velos para membranas; el constructor compartido de órganos; los ejemplos de corazón, riñón, cerebro, hígado y sistema endocrino; un `SKILL.md` y un `references/craft.md` reescritos como doctrina de specimen; el sitio de demostración.
 
 **Se quita:** el modo 3D `turn` de Anatomy (beta), reemplazado por vistas pregeneradas y auditadas con fundido, y el publicador para la galería comunitaria de Anatomy. [`CHANGELOG.md`](CHANGELOG.md) registra cada cambio.
 

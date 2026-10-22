@@ -74,11 +74,18 @@ jobs:
             node examples/$organ/build.mjs --light
           done
 
+      - name: Endocrine system
+        run: |
+          node examples/endocrine/build.mjs
+          node examples/endocrine/build.mjs --light
+
       - name: Demo site copies match the light pages
         run: |
           for organ in heart kidney brain liver; do
             cmp examples/$organ/$organ-light.html docs/$organ.html
           done
+          cmp examples/endocrine/endocrine-light.html docs/endocrine.html
+          cmp examples/endocrine/endocrine-es-light.html docs/endocrine-es.html
 
       - name: Committed pages are unchanged
         run: |

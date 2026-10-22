@@ -72,6 +72,12 @@ The machine parts of the kit it comes from (turned solids, pipes, cables, instru
     <td><sub><b>Brain, left hemisphere.</b> Gyri carved into the cortex by a band-limited field, plus the lateral fissure and the central sulcus; cerebellar folia.</sub></td>
     <td><sub><b>Liver.</b> Lobes, falciform ligament, gallbladder, the vessels at the porta and the inferior vena cava.</sub></td>
   </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="https://julianolarteramos.github.io/specimen/endocrine.html"><img src=".github/assets/endocrine.webp" width="540" alt="A classroom model of the endocrine system in the back half of a torso cut on the coronal plane: the medial face of the brain with the hypothalamus and pituitary ringed in blue, the thyroid on the trachea, the thymus over the heart, the pancreas in the duodenal loop, both kidneys with their adrenal glands, the gonads, the aorta and vena cava with dotted hormone flows, and the sympathetic chains."></a></td>
+  </tr>
+  <tr>
+    <td colspan="2"><sub><b>Endocrine system.</b> A half torso with the glands, vessels and nerves as fields, playing the stress response from one model: the fast sympathetic path to the adrenal medulla, the slow CRH, ACTH and cortisol path, and cortisol braking the hypothalamus and pituitary.</sub></td>
+  </tr>
 </table>
 
 Every image is the light page in [`examples/`](examples), captured with the skill's own [`scripts/drive.mjs`](scripts/drive.mjs). The built pages are committed, so you can open any `.html` in `examples/` directly, or use the [live demo](https://julianolarteramos.github.io/specimen/).
@@ -150,7 +156,7 @@ specimen/
 │   └── react/                React components and client hooks
 ├── references/               long-form guides Claude reads as needed
 ├── scripts/                  headless Chrome checks, print and build helpers, tests
-├── examples/                 organs (heart, kidney, brain, liver) and machines, built pages committed
+├── examples/                 organs (heart, kidney, brain, liver, endocrine system) and machines, built pages committed
 ├── docs/                     the GitHub Pages demo
 ├── evals/evals.json          test prompts and what a good answer contains
 └── .github/                  issue forms, PR template, CI, README images
@@ -168,6 +174,7 @@ Each example has a Node build script that writes a dark page next to itself; add
 | [`kidney`](examples/kidney) | A left kidney with its adrenal gland, whole and opened on its coronal plane: cortex, medullary pyramids, calyces and pelvis in the sinus fat, the hilum vessels and the ureter. | `node examples/kidney/build.mjs` |
 | [`brain`](examples/brain) | The left half of a brain with gyri and sulci, the lateral fissure and the central sulcus, the cerebellum with its folia and the brainstem. | `node examples/brain/build.mjs` |
 | [`liver`](examples/liver) | A liver with its right and left lobes, the falciform ligament, the gallbladder, the portal vein, hepatic artery and bile duct at the porta, and the inferior vena cava. | `node examples/liver/build.mjs` |
+| [`endocrine`](examples/endocrine) | The endocrine system in the back half of a torso cut on the coronal plane: the medial face of the brain with the hypothalamus, pituitary and pineal, the thyroid and parathyroids on the trachea, the thymus, the heart, the pancreas in the duodenal loop, the kidneys with their adrenals cut open, the gonads, the great vessels and the sympathetic chains, vagus and an afferent nerve. Five audited views; a pure model in `model.mjs` plays the stress response on a loop, with the time and the step under way in the readout and the five levels in bars under the stand. Each build writes the English page and a Spanish one (`endocrine-es.html`). The same figure is the centre of a 48-step class [presentation on the endocrine system](https://julianolarteramos.github.io/sistema-endocrino/v3/) (in Spanish). | `node examples/endocrine/build.mjs` |
 
 The kidney, brain and liver share one builder, [`examples/shared/specimen.mjs`](examples/shared/specimen.mjs): plinth and rod, views built and audited in parallel, and the crossfade card.
 
@@ -187,8 +194,9 @@ The machine examples from Anatomy are kept as the reference for mounts, instrume
 - **A teaching model, not an atlas.** Surfaces and colours are simplified on purpose, and the figures are not a medical reference.
 - **The brain's gyri are procedural.** They come from a band-limited noise field carved into the cortex; only the lateral fissure and the central sulcus are placed anatomically. The pattern of the other folds is not a real brain's.
 - **The liver's visceral face is simplified.** It is a single plane that meets the front of the liver at the sharp inferior border. The porta with its vessels, the gallbladder in its fossa and the inferior vena cava in its groove are there, and the caudate lobe is a single swelling; the impressions of neighbouring organs, the quadrate lobe and the fissures of the visceral face are not modelled.
-- **Views are pre-built, not free 3D.** Each view is a separate SVG of about 35–125 KB (the heart's four-chamber cut is the heaviest; the brain's are about 95 KB); a page with three to six views weighs 170–560 KB. Turning steps between views with a crossfade.
-- **The example pages are in English.** Their titles, hints, legends and captions come from each build script and can be translated there.
+- **The endocrine system is a teaching model too.** The medial face of the brain is a flat cut, the small glands (hypothalamus, pituitary, pineal, parathyroids) are at true scale and only a few pixels across at 1×, the lungs and liver are flat inlays on the cut face, and the vessel tree is simplified to the vessels that carry the hormones in the model.
+- **Views are pre-built, not free 3D.** Each view is a separate SVG of about 35–185 KB (the endocrine system's half torso, with its many vessels, is the heaviest at about 175–185 KB; the brain's are about 95 KB); a page with three to six views weighs 170–970 KB. Turning steps between views with a crossfade.
+- **The example pages are in English,** except the endocrine system, which also ships in Spanish. Their titles, hints, legends and captions come from each build script and can be translated there.
 - **Builds are slow.** Every view is ray-marched at build time: the heart takes several minutes per theme.
 - **Not a chart library.** No axes or data plots; numbers appear as a live readout driven by a model.
 
@@ -198,7 +206,7 @@ specimen is a fork of **[Anatomy](https://github.com/wheresryan22/anatomy)** by 
 
 **Kept from Anatomy:** the isometric camera and SVG renderer (`iso-kit`), the card and page builders and their CSS, the round parts, pipes and cables (`lathe.mjs`, `tube.mjs`), the geometry audit and its painter's-order solver, the WebGL layer, the React components, the headless Chrome checks (`capture.mjs`, `drive.mjs`, `lines.mjs`), printable sheets, the machine examples, most of the craft rules, and the full commit history.
 
-**Added in specimen:** organic distance fields (`kit/blob.mjs`) with ray-marched four-tone shading and tissue layers; the audit's organic mode, field bounds and Lipschitz checks; sections with cut-face tissues and field cores; the field splitter; veils for membranes; the shared organ builder; the heart, kidney, brain and liver examples; a `SKILL.md` and `references/craft.md` rewritten as the specimen doctrine; the demo site.
+**Added in specimen:** organic distance fields (`kit/blob.mjs`) with ray-marched four-tone shading and tissue layers; the audit's organic mode, field bounds and Lipschitz checks; sections with cut-face tissues and field cores; the field splitter; veils for membranes; the shared organ builder; the heart, kidney, brain, liver and endocrine examples; a `SKILL.md` and `references/craft.md` rewritten as the specimen doctrine; the demo site.
 
 **Removed:** Anatomy's 3D `turn` mode (beta), replaced by pre-built audited views with a crossfade, and the publisher for the Anatomy community gallery. [`CHANGELOG.md`](CHANGELOG.md) lists every change.
 

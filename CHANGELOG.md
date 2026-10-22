@@ -23,12 +23,13 @@ All notable changes to specimen are recorded here. Specimen is a fork of [Anatom
 
 ### Changed
 
-- Specimen fork: lighter organ pages. `fieldSvg` draws the contour lines that share a tone, fade step and free end as one path; `paint` simplifies contours and their fade ramps to `lineSmooth` (0.12 px), and fits each overlay tone ring to a tolerance that follows its width, up to `toneSmooth`. The brain sets `toneSmooth: 2.5` and `lineSmooth: 0.2`: its views drop from about 180–200 KB to 93–98 KB and its page from 603 to 335 KB, with the same gyri and sulci at 1× and 4×. The heart page drops from 610 to 554 KB and the kidney from 221 to 219 KB, with the same look.
+- Specimen fork: lighter organ pages. `fieldSvg` draws the contour lines that share a tone, fade step and free end as one path; `paint` simplifies contours and their fade ramps to `lineSmooth` (0.12 px), and fits each overlay tone ring to a tolerance that follows its width, up to `toneSmooth`. The brain sets `toneSmooth: 2.5` and `lineSmooth: 0.2`: its views drop from about 180–200 KB to 93–98 KB and its page from 603 to 335 KB, with the same gyri and sulci at 1× and 4×. The heart page drops from 610 to 556 KB and the kidney from 221 to 219 KB, with the same look.
 - Specimen fork: the liver is remodelled (`examples/liver/model.mjs`). The right lobe is about five times the left by volume, the left lobe tapers to the left, and the anterior and visceral surfaces meet at a sharp inferior border. The falciform ligament is a low fold with its own tone from the top of the liver to the notch in the border, where the round ligament passes under; the tone bands run on across it. The gallbladder sits in its fossa with the fundus just past the border; at the porta the bile duct lies in front on the right, the hepatic artery in front on the left and the portal vein behind, all cut short; the inferior vena cava lies in its groove at the back. The views are the front, from the right and from behind.
 - A Figure no longer quotes a time to the user. The 30–90 minute estimate was often far longer than the build itself ([#41](https://github.com/wheresryan22/anatomy/issues/41)).
 
 ### Fixed
 
+- Specimen fork: a surface takes the tissue of the leaf whose own surface passes through it, the nearest if several do; where none does (a carved wall, a blend fillet) it keeps the leaf it lies deepest in, and tissue mixes still weigh signed distances, so carved chamber walls keep their tissue.
 - Specimen fork: contour lines are simplified by their distance to each chord segment, not to its infinite line, so a contour that hooks back at its end keeps the hook and the lines snapped to it stay attached.
 - Line-end audits follow cubic and quadratic strokes with a bounded screen-space approximation, so lines attached between curve samples are not reported as loose.
 

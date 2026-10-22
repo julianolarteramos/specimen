@@ -172,3 +172,4 @@ export const HEART_CUT = B.field(B.carve(B.blend(1.2, SHELL, ...VALVES), REMOVE,
 
 export const VEIL_OPACITY = 0.32;
 export const PERICARDIUM = B.field(B.clip(B.grow(B.blend(6, BODY, ...AURICLES), 3.5), [0, 0, LIFT + 46], [0, 0, 1], 1.5), { name: "pericardium" });
+export const HEART_PARTS = { body: BODY, auricles: AURICLES, coronaries: CORONARIES };

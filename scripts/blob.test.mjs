@@ -95,3 +95,10 @@ test("fieldSvg draws lines that share a look as one path, and a faded line keeps
   assert.equal((svg.match(/data-free="start"/g) ?? []).length, 1);
   assert.equal((svg.match(/<path class="iso-line" data-tone="lo" d="([^"]*)"/)[1].match(/M/g) ?? []).length, 4);
 });
+
+test("place moves, turns and scales a field without changing its distances' shape", () => {
+  const node = B.place(B.capsule([0, 0, 0], [10, 0, 0], 1, 1), { scale: 0.5, basis: [[0, 1, 0], [-1, 0, 0], [0, 0, 1]], move: [3, 0, 0] });
+  const F = B.field(node);
+  assert.ok(Math.abs(F.value([3, 2.5, 0]) + 0.5) < 1e-9);
+  assert.ok(Math.abs(F.value([3, 2.5, 2]) - 1.5) < 1e-9);
+});

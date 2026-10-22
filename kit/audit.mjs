@@ -1597,7 +1597,9 @@ export function markupBox(svg) {
 export function footprintOf(shape, cam) {
   const flat = (p) => [cam.origin[0] + dot3(p, cam.R) * cam.k, cam.origin[1] + dot3(p, cam.D) * cam.k];
   if (shape.kind === "field") {
-    const points = fieldSurface(shape, 1).map(flat);
+    const b = shape.F.bounds;
+    const least = b ? Math.min(...b.max.map((v, i) => v - b.min[i])) : 4;
+    const points = fieldSurface(shape, Math.max(0.15, Math.min(1, least / 6))).map(flat);
     return points.length ? boxOfPoints(points, [1, 0, 0, 1, 0, 0]) : null;
   }
   if (shape.kind === "body") {

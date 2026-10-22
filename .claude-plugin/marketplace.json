@@ -1,0 +1,20 @@
+{
+  "name": "specimen",
+  "description": "Specimen: crafted, interactive isometric figures of anatomy for Claude Code.",
+  "owner": { "name": "Julián Olarte", "url": "https://github.com/julianolarteramos" },
+  "plugins": [
+    {
+      "name": "specimen",
+      "displayName": "Specimen",
+      "source": "./",
+      "description": "Crafted, interactive isometric SVG figures of anatomy drawn as a real teaching model: organs and vessels from smooth distance fields, four-tone shading, tissue colours, cuts and membranes, audited views and calm motion.",
+      "author": { "name": "Julián Olarte", "url": "https://github.com/julianolarteramos" },
+      "homepage": "https://julianolarteramos.github.io/specimen/",
+      "repository": "https://github.com/julianolarteramos/specimen",
+      "license": "MIT",
+      "keywords": ["anatomy", "isometric", "svg", "illustration", "education", "physiology", "skill"],
+      "category": "design",
+      "skills": ["./"]
+    }
+  ]
+}

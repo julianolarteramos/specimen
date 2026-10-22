@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-card.webp" width="480" alt="A framed card, Fig 1, Heart: a classroom heart model on a turned plinth, with the aortic arch and its three branches, the pulmonary trunk, the venae cavae and red coronary arteries. Under the model are view dots and the readout 72 bpm, diastole."></a>
+  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-demo.webp" width="480" alt="A ten-second clip of the classroom heart model: it beats at 72 bpm, turns through two views, crossfades into the four-chamber cut, then the pericardium view, and back."></a>
 </p>
 
-<p align="center"><sub><code>examples/heart</code>, light theme. <a href="https://julianolarteramos.github.io/specimen/">Open the live demo</a>: drag or use the arrow keys to turn it, up and down to change the heart rate.</sub></p>
+<p align="center"><sub><code>examples/heart</code>, light theme, a 10 s clip recorded frame by frame from the page (<a href=".github/assets/heart-demo.mp4">MP4</a>; also the <a href=".github/assets/endocrine-demo.mp4">endocrine system</a>). <a href="https://julianolarteramos.github.io/specimen/">Open the live demo</a>: drag or use the arrow keys to turn it, up and down to change the heart rate.</sub></p>
 
 ---
 

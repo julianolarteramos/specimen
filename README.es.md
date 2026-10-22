@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-card.webp" width="480" alt="Una tarjeta enmarcada, Fig 1, Heart: un modelo de corazón de aula sobre una peana torneada, con el arco aórtico y sus tres ramas, el tronco pulmonar, las venas cavas y las arterias coronarias en rojo. Bajo el modelo, los puntos de las vistas y la lectura 72 bpm, diastole."></a>
+  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-demo.webp" width="480" alt="Un clip de diez segundos del modelo de corazón: late a 72 lpm, gira por dos vistas, pasa con un fundido al corte de cuatro cámaras, luego a la vista del pericardio, y vuelve."></a>
 </p>
 
-<p align="center"><sub><code>examples/heart</code>, tema claro. <a href="https://julianolarteramos.github.io/specimen/">Abre la demo en vivo</a>: arrastra o usa las flechas para girarlo, y arriba y abajo para cambiar la frecuencia cardiaca.</sub></p>
+<p align="center"><sub><code>examples/heart</code>, tema claro, un clip de 10 s grabado cuadro a cuadro desde la página (<a href=".github/assets/heart-demo.mp4">MP4</a>; también el del <a href=".github/assets/endocrine-demo.mp4">sistema endocrino</a>). <a href="https://julianolarteramos.github.io/specimen/">Abre la demo en vivo</a>: arrastra o usa las flechas para girarlo, y arriba y abajo para cambiar la frecuencia cardiaca.</sub></p>
 
 ---
 

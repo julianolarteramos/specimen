@@ -80,6 +80,21 @@ Cada imagen es la página clara de [`examples/`](examples), capturada con el pro
 
 specimen es una [Agent Skill](https://agentskills.io): una carpeta con `SKILL.md` en la raíz, y este repositorio es esa carpeta.
 
+Como plugin de Claude Code, desde el marketplace de este repositorio. En una sesión de Claude Code:
+
+```text
+/plugin marketplace add julianolarteramos/specimen
+/plugin install specimen@specimen
+```
+
+o en un solo paso desde la terminal, con Claude Code 2.1.275 o posterior:
+
+```sh
+claude plugin install specimen --marketplace julianolarteramos/specimen
+```
+
+Claude Code antepone el nombre del plugin a sus skills, así que la skill del plugin es `/specimen:specimen`; Claude también la carga solo cuando pides una figura anatómica. Para actualizar, ejecuta `/plugin marketplace update specimen` y luego `/plugin update specimen@specimen`. El plugin copia el repositorio completo, ejemplos incluidos.
+
 Con la CLI [`skills`](https://github.com/vercel-labs/skills):
 
 ```sh

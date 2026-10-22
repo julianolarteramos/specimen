@@ -11,6 +11,8 @@ All notable changes to specimen are recorded here. Specimen is a fork of [Anatom
 
 ### Added
 
+- Specimen fork: install as a Claude Code plugin. `.claude-plugin/marketplace.json` makes the repository a marketplace named `specimen` whose one plugin, `specimen`, is the repository root with its root `SKILL.md`: `/plugin marketplace add julianolarteramos/specimen`, then `/plugin install specimen@specimen` (or `claude plugin install specimen --marketplace julianolarteramos/specimen`). The plugin's skill is `/specimen:specimen`. There is no `plugin.json`, so a clone into a skills folder still loads as the plain `/specimen` skill, and `npx skills add` is unchanged. Without a `version`, the plugin's version is the commit it was installed from.
+
 - Specimen fork: three more organs on the shared builder `examples/shared/specimen.mjs` (plinth and rod, parallel audited views, crossfade card): `examples/kidney` (with its adrenal, whole and in coronal section, coloured by field `cores`), `examples/brain` (gyri carved by a band-limited field, the lateral fissure and central sulcus, cerebellar folia) and `examples/liver` (lobes, falciform ligament, gallbladder, porta and inferior vena cava). `B.grow`, `B.veilSvg` and `veil: { opacity }` items draw membranes; the heart gains a view inside its pericardium.
 
 - Specimen fork: `B.split(root, seeds)` cuts a field into depth-sortable pieces along bisector planes; pieces draw no outline or contour along their cut, so a vessel tree that passes in front of one part and behind another can be ordered. `B.halfspace`, `B.intersect` and cut-face tissues on `carve` and `clip` build sections; `paint(..., { tones: "overlay", base, banded })` draws tones as shared translucent veils over flat tissue layers.

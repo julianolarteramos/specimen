@@ -44,6 +44,7 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-si
 footer p{margin:6px 0}
 @media (max-width:880px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}.strip figcaption{font-size:10px;padding:4px 2px 6px}.wrap{padding-top:28px}.pitch{font-size:17px}}
+.clips{display:grid;align-items:start;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0}.clips figure{margin:0;background:var(--card);border:1px solid var(--rule)}.clips video{display:block;width:100%;height:auto}.clips figcaption{font:12px/1.5 var(--mono);color:var(--muted);padding:6px 10px 8px}@media (max-width:600px){.clips{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -118,6 +119,14 @@ footer p{margin:6px 0}
 </a>
 </div>
 <p class="views"><a href="endocrine-es.html" hreflang="es" lang="es">Sistema endocrino, en español</a> · <a href="https://julianolarteramos.github.io/sistema-endocrino/v3/" hreflang="es">the class presentation built on it (in Spanish)</a></p>
+
+<section>
+<h2>Clips</h2>
+<div class="clips">
+<figure><video src="media/heart-demo.mp4" width="1080" height="1322" autoplay muted loop playsinline preload="metadata" aria-label="Ten seconds of the heart model: it beats, turns through two views, opens along the four-chamber plane and shows the pericardium"></video><figcaption>Heart, 10 s · <a href="media/heart-demo.mp4">MP4</a> · <a href="media/heart-demo.webm">WebM</a> · <a href="media/heart-demo.webp">WebP</a> · <a href="media/heart-demo.gif">GIF</a></figcaption></figure>
+<figure><video src="media/endocrine-demo.mp4" width="1080" height="1624" autoplay muted loop playsinline preload="metadata" aria-label="Eleven seconds of the endocrine model: the alarm and adrenaline, then CRH, ACTH and cortisol, the cortisol brake, and back to rest"></video><figcaption>Endocrine system, 11 s · <a href="media/endocrine-demo.mp4">MP4</a> · <a href="media/endocrine-demo.webm">WebM</a> · <a href="media/endocrine-demo.webp">WebP</a> · <a href="media/endocrine-demo.gif">GIF</a></figcaption></figure>
+</div>
+</section>
 
 <section>
 <h2>How the figures are made</h2>

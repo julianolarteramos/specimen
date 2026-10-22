@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-demo.webp" width="480" alt="A ten-second clip of the classroom heart model: it beats at 72 bpm, turns through two views, crossfades into the four-chamber cut, then the pericardium view, and back."></a>
+  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src="docs/media/heart-demo.webp" width="480" alt="A ten-second clip of the classroom heart model: it beats at 72 bpm, turns through two views, crossfades into the four-chamber cut, then the pericardium view, and back."></a>
 </p>
 
-<p align="center"><sub><code>examples/heart</code>, light theme, a 10 s clip recorded frame by frame from the page (<a href=".github/assets/heart-demo.mp4">MP4</a>; also the <a href=".github/assets/endocrine-demo.mp4">endocrine system</a>). <a href="https://julianolarteramos.github.io/specimen/">Open the live demo</a>: drag or use the arrow keys to turn it, up and down to change the heart rate.</sub></p>
+<p align="center"><sub><code>examples/heart</code>, light theme, a 10 s clip recorded frame by frame from the page (<a href="https://julianolarteramos.github.io/specimen/media/heart-demo.mp4">MP4</a>; also the <a href="https://julianolarteramos.github.io/specimen/media/endocrine-demo.mp4">endocrine system</a>). <a href="https://julianolarteramos.github.io/specimen/">Open the live demo</a>: drag or use the arrow keys to turn it, up and down to change the heart rate.</sub></p>
 
 ---
 

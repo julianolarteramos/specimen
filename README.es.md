@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src=".github/assets/heart-demo.webp" width="480" alt="Un clip de diez segundos del modelo de corazón: late a 72 lpm, gira por dos vistas, pasa con un fundido al corte de cuatro cámaras, luego a la vista del pericardio, y vuelve."></a>
+  <a href="https://julianolarteramos.github.io/specimen/heart.html"><img src="docs/media/heart-demo.webp" width="480" alt="Un clip de diez segundos del modelo de corazón: late a 72 lpm, gira por dos vistas, pasa con un fundido al corte de cuatro cámaras, luego a la vista del pericardio, y vuelve."></a>
 </p>
 
-<p align="center"><sub><code>examples/heart</code>, tema claro, un clip de 10 s grabado cuadro a cuadro desde la página (<a href=".github/assets/heart-demo.mp4">MP4</a>; también el del <a href=".github/assets/endocrine-demo.mp4">sistema endocrino</a>). <a href="https://julianolarteramos.github.io/specimen/">Abre la demo en vivo</a>: arrastra o usa las flechas para girarlo, y arriba y abajo para cambiar la frecuencia cardiaca.</sub></p>
+<p align="center"><sub><code>examples/heart</code>, tema claro, un clip de 10 s grabado cuadro a cuadro desde la página (<a href="https://julianolarteramos.github.io/specimen/media/heart-demo.mp4">MP4</a>; también el del <a href="https://julianolarteramos.github.io/specimen/media/endocrine-demo.mp4">sistema endocrino</a>). <a href="https://julianolarteramos.github.io/specimen/">Abre la demo en vivo</a>: arrastra o usa las flechas para girarlo, y arriba y abajo para cambiar la frecuencia cardiaca.</sub></p>
 
 ---
 

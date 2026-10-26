@@ -78,6 +78,12 @@ The machine parts of the kit it comes from (turned solids, pipes, cables, instru
   <tr>
     <td colspan="2"><sub><b>Endocrine system.</b> A half torso with the glands, vessels and nerves as fields, playing the stress response from one model: the fast sympathetic path to the adrenal medulla, the slow CRH, ACTH and cortisol path, and cortisol braking the hypothalamus and pituitary.</sub></td>
   </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="https://julianolarteramos.github.io/sistema-nervioso-central/"><img src=".github/assets/nervous-system.webp" width="540" alt="A classroom model of the brain and spinal cord with a translucent coronal plane through it and, on the left, the real section of the parts at that plane, each in its tissue colour"></a></td>
+  </tr>
+  <tr>
+    <td colspan="2"><sub><b>Central nervous system</b> (its own repository, a case study in <a href="references/assemblies.md">assemblies</a>). The brain and spinal cord in 34 parts, each painted as its own field so they can be hidden, faded, isolated and pulled apart. Ten views, a 13-step peel from the dura to the brainstem, a midsagittal cut and a coronal and axial section viewer, labels, and six pathways with animated flow. <a href="https://julianolarteramos.github.io/sistema-nervioso-central/">Live</a> · <a href="https://github.com/julianolarteramos/sistema-nervioso-central">code</a>.</sub></td>
+  </tr>
 </table>
 
 Every image is the light page in [`examples/`](examples), captured with the skill's own [`scripts/drive.mjs`](scripts/drive.mjs). The built pages are committed, so you can open any `.html` in `examples/` directly, or use the [live demo](https://julianolarteramos.github.io/specimen/).
@@ -190,6 +196,7 @@ Each example has a Node build script that writes a dark page next to itself; add
 | [`brain`](examples/brain) | The left half of a brain with gyri and sulci, the lateral fissure and the central sulcus, the cerebellum with its folia and the brainstem. | `node examples/brain/build.mjs` |
 | [`liver`](examples/liver) | A liver with its right and left lobes, the falciform ligament, the gallbladder, the portal vein, hepatic artery and bile duct at the porta, and the inferior vena cava. | `node examples/liver/build.mjs` |
 | [`endocrine`](examples/endocrine) | The endocrine system in the back half of a torso cut on the coronal plane: the medial face of the brain with the hypothalamus, pituitary and pineal, the thyroid and parathyroids on the trachea, the thymus, the heart, the pancreas in the duodenal loop, the kidneys with their adrenals cut open, the gonads, the great vessels and the sympathetic chains, vagus and an afferent nerve. Five audited views; a pure model in `model.mjs` plays the stress response on a loop, with the time and the step under way in the readout and the five levels in bars under the stand. Each build writes the English page and a Spanish one (`endocrine-es.html`). The same figure is the centre of a 48-step class [presentation on the endocrine system](https://julianolarteramos.github.io/sistema-endocrino/v3/) (in Spanish). | `node examples/endocrine/build.mjs` |
+| [`nervous system`](https://github.com/julianolarteramos/sistema-nervioso-central) | **Not in this repository**: it has its own, because it needs an assembly engine (parts painted whole, an exit planner, a cut planner, a section viewer) that is not part of the kit. The brain and spinal cord in 34 parts and 10 views: hide, fade, isolate, pull apart, peel in 13 layers, cut, label and follow six pathways. In Spanish. What it taught is in [`references/assemblies.md`](references/assemblies.md). |
 
 The kidney, brain and liver share one builder, [`examples/shared/specimen.mjs`](examples/shared/specimen.mjs): plinth and rod, views built and audited in parallel, and the crossfade card.
 

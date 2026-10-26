@@ -78,6 +78,12 @@ Las piezas de máquina del kit original (sólidos torneados, tubos, cables, inst
   <tr>
     <td colspan="2"><sub><b>Sistema endocrino.</b> Un medio torso con las glándulas, los vasos y los nervios como campos, que reproduce la respuesta al estrés con un solo modelo: la vía rápida del simpático a la médula suprarrenal, la vía lenta de CRH, ACTH y cortisol, y el freno del cortisol sobre el hipotálamo y la hipófisis.</sub></td>
   </tr>
+  <tr>
+    <td colspan="2" align="center"><a href="https://julianolarteramos.github.io/sistema-nervioso-central/"><img src=".github/assets/nervous-system.webp" width="540" alt="Un modelo de aula del encéfalo y la médula espinal con un plano coronal translúcido y, a la izquierda, la sección real de las piezas en ese plano, cada una con el color de su tejido"></a></td>
+  </tr>
+  <tr>
+    <td colspan="2"><sub><b>Sistema nervioso central</b> (en su propio repositorio, un caso práctico de <a href="references/assemblies.md">ensamblajes</a>). El encéfalo y la médula en 34 piezas, cada una pintada como su propio campo para poder ocultarlas, hacerlas translúcidas, aislarlas y separarlas. Diez vistas, un pelado de 13 pasos de la duramadre al tronco, un corte sagital medio y un visor de cortes coronal y axial, rótulos y seis vías con flujo animado. <a href="https://julianolarteramos.github.io/sistema-nervioso-central/">En vivo</a> · <a href="https://github.com/julianolarteramos/sistema-nervioso-central">código</a>.</sub></td>
+  </tr>
 </table>
 
 Cada imagen es la página clara de [`examples/`](examples), capturada con el propio [`scripts/drive.mjs`](scripts/drive.mjs) de la skill. Las páginas generadas están en el repositorio: puedes abrir cualquier `.html` de `examples/` directamente, o usar la [demo en vivo](https://julianolarteramos.github.io/specimen/).
@@ -166,6 +172,7 @@ Cada ejemplo tiene un script de Node que escribe una página oscura a su lado; a
 | [`brain`](examples/brain) | La mitad izquierda de un cerebro con circunvoluciones y surcos, la cisura lateral y el surco central, el cerebelo con sus folias y el tronco encefálico. | `node examples/brain/build.mjs` |
 | [`liver`](examples/liver) | Un hígado con sus lóbulos derecho e izquierdo, el ligamento falciforme, la vesícula biliar, la vena porta, la arteria hepática y el colédoco en el hilio, y la vena cava inferior. | `node examples/liver/build.mjs` |
 | [`endocrine`](examples/endocrine) | El sistema endocrino en la mitad posterior de un torso cortado en el plano coronal: la cara medial del encéfalo con el hipotálamo, la hipófisis y la pineal, la tiroides y las paratiroides sobre la tráquea, el timo, el corazón, el páncreas en el asa del duodeno, los riñones con sus suprarrenales abiertas, las gónadas, los grandes vasos y las cadenas simpáticas, el vago y un nervio aferente. Cinco vistas auditadas; un modelo puro en `model.mjs` reproduce en bucle la respuesta al estrés, con el tiempo y el paso en curso en la lectura y los cinco niveles en barras bajo el pie. Cada construcción escribe la página en inglés y otra en español (`endocrine-es.html`). La misma figura es el centro de una [presentación de clase sobre el sistema endocrino](https://julianolarteramos.github.io/sistema-endocrino/v3/) en 48 pasos. | `node examples/endocrine/build.mjs` |
+| [`sistema nervioso`](https://github.com/julianolarteramos/sistema-nervioso-central) | **No está en este repositorio**: tiene el suyo, porque necesita un motor de ensamblaje (piezas pintadas completas, un planificador de salidas, uno de cortes y un visor de secciones) que no forma parte del kit. El encéfalo y la médula en 34 piezas y 10 vistas: ocultar, atenuar, aislar, separar, pelar en 13 capas, cortar, rotular y seguir seis vías. En español. Lo que enseñó está en [`references/assemblies.md`](references/assemblies.md) (en inglés). |
 
 El riñón, el cerebro y el hígado comparten un constructor, [`examples/shared/specimen.mjs`](examples/shared/specimen.mjs): peana y varilla, vistas generadas y auditadas en paralelo, y la tarjeta con fundido.
 
